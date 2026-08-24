@@ -1,0 +1,84 @@
+{
+    "tables": [
+      {
+        "uuid": "11111111-1111-1111-1111-111111111111",
+        "name": "City",
+        "columns": [
+          {"name": "name", "type": 1},
+          {"name": "population", "type": 2},
+          {"name": "isCapital", "type": 3},
+          {"name": "country", "type": 42, "targetTableUuid": "33333333-3333-3333-3333-333333333333"}
+        ],
+        "rows": [
+          {"id": 0, "data": {"name": "Berlin", "population": 3645000, "isCapital": true, "country": 0}, "refCount": 1},
+          {"id": 1, "data": {"name": "Hamburg", "population": 1841000, "isCapital": false, "country": 0}, "refCount": 1},
+          {"id": 2, "data": {"name": "Munich", "population": 1472000, "isCapital": false, "country": 0}, "refCount": 1},
+          {"id": 3, "data": {"name": "Vienna", "population": 1897000, "isCapital": true, "country": 1}, "refCount": 1},
+          {"id": 4, "data": {"name": "Salzburg", "population": 154000, "isCapital": false, "country": 1}, "refCount": 1},
+          {"id": 5, "data": {"name": "Zurich", "population": 402000, "isCapital": false, "country": 2}, "refCount": 1}
+        ]
+      },
+      {
+        "uuid": "22222222-2222-2222-2222-222222222222",
+        "name": "Building",
+        "columns": [
+          {"name": "name", "type": 1},
+          {"name": "city", "type": 42, "targetTableUuid": "11111111-1111-1111-1111-111111111111"},
+          {"name": "yearBuilt", "type": 2},
+          {"name": "isOpen", "type": 3}
+        ],
+        "rows": [
+          {"id": 0, "data": {"name": "Fernsehturm", "city": 0, "yearBuilt": 1969, "isOpen": true}, "refCount": 1},
+          {"id": 1, "data": {"name": "Brandenburger Tor", "city": 0, "yearBuilt": 1791, "isOpen": true}, "refCount": 1},
+          {"id": 2, "data": {"name": "Elbphilharmonie", "city": 1, "yearBuilt": 2016, "isOpen": true}, "refCount": 1},
+          {"id": 3, "data": {"name": "Frauenkirche", "city": 2, "yearBuilt": 1488, "isOpen": true}, "refCount": 1},
+          {"id": 4, "data": {"name": "Stephansdom", "city": 3, "yearBuilt": 1160, "isOpen": true}, "refCount": 1},
+          {"id": 5, "data": {"name": "Grossmünster", "city": 5, "yearBuilt": 1220, "isOpen": true}, "refCount": 1}
+        ]
+      },
+      {
+        "uuid": "33333333-3333-3333-3333-333333333333",
+        "name": "Country",
+        "columns": [
+          {"name": "name", "type": 1},
+          {"name": "continent", "type": 1},
+          {"name": "population", "type": 2}
+        ],
+        "rows": [
+          {"id": 0, "data": {"name": "Germany", "continent": "Europe", "population": 83100000}, "refCount": 1},
+          {"id": 1, "data": {"name": "Austria", "continent": "Europe", "population": 8900000}, "refCount": 1},
+          {"id": 2, "data": {"name": "Switzerland", "continent": "Europe", "population": 8600000}, "refCount": 1}
+        ]
+      },
+      {
+        "uuid": "44444444-4444-4444-4444-444444444444",
+        "name": "Person",
+        "columns": [
+          {"name": "name", "type": 1},
+          {"name": "age", "type": 2},
+          {"name": "city", "type": 42, "targetTableUuid": "11111111-1111-1111-1111-111111111111"},
+          {"name": "isArchitect", "type": 3}
+        ],
+        "rows": [
+          {"id": 0, "data": {"name": "Karl Friedrich Schinkel", "age": 60, "city": 0, "isArchitect": true}, "refCount": 1},
+          {"id": 1, "data": {"name": "Fritz Höger", "age": 72, "city": 1, "isArchitect": true}, "refCount": 1},
+          {"id": 2, "data": {"name": "Friedensreich Hundertwasser", "age": 71, "city": 3, "isArchitect": true}, "refCount": 1},
+          {"id": 3, "data": {"name": "Angela Merkel", "age": 69, "city": 0, "isArchitect": false}, "refCount": 1}
+        ]
+      },
+      {
+        "uuid": "55555555-5555-5555-5555-555555555555",
+        "name": "Architect",
+        "columns": [
+          {"name": "person", "type": 42, "targetTableUuid": "44444444-4444-4444-4444-444444444444"},
+          {"name": "building", "type": 42, "targetTableUuid": "22222222-2222-2222-2222-222222222222"},
+          {"name": "role", "type": 1}
+        ],
+        "rows": [
+          {"id": 0, "data": {"person": 0, "building": 1, "role": "lead architect"}, "refCount": 1},
+          {"id": 1, "data": {"person": 1, "building": 2, "role": "lead architect"}, "refCount": 1},
+          {"id": 2, "data": {"person": 2, "building": 4, "role": "consultant"}, "refCount": 1}
+        ]
+      }
+    ]
+  }

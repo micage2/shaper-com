@@ -1,0 +1,57 @@
+<style>
+    :host {
+        display: block;
+        width: 100%;
+        min-height: var(--row-height, 24px);
+        box-sizing: border-box;
+        border-bottom: 1px solid #e0e0e0;
+        border-right: 1px solid #e0e0e0;
+        background: #fff;
+    }
+    :host(:hover) {
+        background: #fafafa;
+    }
+    .cell-view {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 4px 8px;
+        box-sizing: border-box;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    .idle-container {
+        width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        cursor: default;
+    }
+    .edit-container {
+        width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    .cell-value {
+        display: block;
+        width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    input, select {
+        width: 100%;
+        border: 1px solid #4a90d9;
+        padding: 2px 4px;
+        margin: 0;
+        font: inherit;
+        box-sizing: border-box;
+        background: #fff;
+    }
+    input[type="checkbox"] {
+        width: auto;
+        margin: auto;
+    }
+</style>
+<div class="cell-view">
+    <div class="idle-container"></div>
+    <div class="edit-container"></div>
+</div>

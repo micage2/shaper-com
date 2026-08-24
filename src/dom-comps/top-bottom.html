@@ -1,0 +1,40 @@
+<div class="container">
+    <div class="pane top-pane">
+        <slot name="top"></slot>
+    </div>
+    <div class="divider"></div>
+    <div class="pane bottom-pane">
+        <slot name="bottom"></slot>
+    </div>
+</div>
+<style>
+    :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+    .container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+    }
+
+    .top-pane,
+    .bottom-pane {
+        overflow: hidden;
+        position: relative;
+    }
+
+    .divider {
+        height: 4px;
+        cursor: row-resize;
+        background: #ccc;
+        flex-shrink: 0;
+    }
+
+    .divider:hover,
+    .divider.dragging {
+        background: #999;
+    }
+</style>

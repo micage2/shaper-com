@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <script type="module">
+        // Test 1: Open shadow DOM
+        const host1 = document.createElement('div');
+        host1.style.height = '100%';
+        const shadow1 = host1.attachShadow({ mode: 'open' });
+        shadow1.innerHTML = `
+            <div class="header" style="height: 32px; background: red;">
+                <slot name="header"></slot>
+            </div>
+            <div class="body" style="height: calc(100% - 32px); background: blue;">
+                <slot name="body"></slot>
+            </div>
+        `;
+        
+        // Create children
+        const child1 = document.createElement('div');
+        child1.textContent = 'HEADER';
+        child1.slot = 'header';
+        
+        const child2 = document.createElement('div');
+        child2.textContent = 'BODY';
+        child2.slot = 'body';
+        
+        host1.appendChild(child1);
+        host1.appendChild(child2);
+        
+        document.body.appendChild(host1);
+        
+        // Check if slotted
+        console.log('Host1 children:', host1.children.length);
+        console.log('Child1 slot:', child1.slot);
+        console.log('Child2 slot:', child2.slot);
+        
+        // Test 2: Closed shadow DOM
+        const host2 = document.createElement('div');
+        host2.style.height = '100%';
+        const shadow2 = host2.attachShadow({ mode: 'closed' });
+        shadow2.innerHTML = `
+            <div class="header" style="height: 32px; background: green;">
+                <slot name="header"></slot>
+            </div>
+            <div class="body" style="height: calc(100% - 32px); background: yellow;">
+                <slot name="body"></slot>
+            </div>
+        `;
+        
+        const child3 = document.createElement('div');
+        child3.textContent = 'HEADER2';
+        child3.slot = 'header';
+        
+        const child4 = document.createElement('div');
+        child4.textContent = 'BODY2';
+        child4.slot = 'body';
+        
+        host2.appendChild(child3);
+        host2.appendChild(child4);
+        
+        document.body.appendChild(host2);
+        
+        console.log('Host2 children:', host2.children.length);
+        console.log('Child3 slot:', child3.slot);
+        console.log('Child4 slot:', child4.slot);
+    </script>
+</body>
+</html>

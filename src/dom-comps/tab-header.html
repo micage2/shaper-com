@@ -1,0 +1,78 @@
+<style>
+    :host {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 8px;
+        height: 32px;
+        border-right: 1px solid #ddd;
+        cursor: default;
+        user-select: none;
+        background: #f0f0f0;
+        max-width: 200px;
+        white-space: nowrap;
+        box-sizing: border-box;
+        font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    :host(:hover) {
+        background: #e5e5e5;
+    }
+
+    :host(.active) {
+        background: #ffffff;
+        box-shadow: inset 0 -2px 0 #4a90d9;
+    }
+
+    .icon {
+        flex-shrink: 0;
+        font-size: 14px;
+        width: 16px;
+        text-align: center;
+        margin: 0px 4px;
+    }
+
+    .label {
+        flex: 1;
+        font-size: 14px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #333;
+    }
+
+    :host(:hover) .close-btn {
+        visibility: visible;
+    }
+
+.close-btn {
+    flex-shrink: 0;
+    visibility: hidden;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    margin-right: 4px;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+.close-btn:hover {
+    color: #000;
+    background: #ccc;
+    border-radius: 50%;
+}
+.close-btn svg {
+    width: 8px;
+    height: 8x;
+    fill: currentColor;
+    display: block;
+}
+
+</style>
+<span class="icon"></span>
+<span class="label"></span>
+<button class="close-btn">×</button>
