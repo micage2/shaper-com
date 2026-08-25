@@ -53,7 +53,7 @@ function ctor(args = {}) {
         }
     }
     
-    function selectItem(item) {
+    function __selectItem(item, silent) {
         if (state.selectedItem === item) return;
         
         if (state.selectedItem) {
@@ -63,8 +63,31 @@ function ctor(args = {}) {
         state.selectedItem = item;
         state.selectedItem.setSelected(true);
         
-        self.emit('item-selected', item);
+        if (!silent) self.emit('item-selected', item);
     }
+
+    function selectItem(item, silent = false) {
+        if (item === null) {
+            if (state.selectedItem) {
+                state.selectedItem.setSelected(false);
+            }
+            state.selectedItem = null;
+            return;
+        }
+        
+        if (state.selectedItem === item) return;
+        
+        if (state.selectedItem) {
+            state.selectedItem.setSelected(false);
+        }
+        
+        state.selectedItem = item;
+        state.selectedItem.setSelected(true);
+        
+        if (!silent) {
+            self.emit('item-selected', item);
+        }
+    }    
     
     return {
         getHost() { return host; },
@@ -83,7 +106,7 @@ function ctor(args = {}) {
 const ITreeView = (instance) => ({
     add(itemData) {
         let item = null;
-        
+
         item = DOM.create(instance.itemClsid, {
             ...itemData
         });
@@ -99,15 +122,12 @@ const ITreeView = (instance) => ({
         item.on('label-changed', (newLabel) => {
             this.emit('item-label-changed', { item, newLabel });
         });
-
-        if (itemData.autoSelect) {
-            instance.selectItem(item);
-        }
         
         const selected = this.getSelected();
         if (selected && !selected.isFolder()) return;        
         
         if (selected) {
+            item.setDepth(selected.getDepth() + 1);
             const selectedIdx = instance.state.items.indexOf(selected);
             const endIdx = instance.getSubtreeEndIndex(selectedIdx);
             instance.state.items.splice(endIdx + 1, 0, item);
@@ -125,9 +145,16 @@ const ITreeView = (instance) => ({
             DOM.attach(item, this);
         }
 
+
+        if (itemData.autoSelect) {
+            instance.selectItem(item, true);
+        }
+
         this.emit('item-added', item);
+
+        console.log("--".repeat(item.getDepth()), itemData.label);
         
-        return this;
+        return item;
     },
     
     remove(item) {
@@ -155,8 +182,8 @@ const ITreeView = (instance) => ({
         return instance.state.selectedItem;
     },
 
-    select(item) {
-        instance.selectItem(item);
+    select(item, silent = false) {
+        instance.selectItem(item, silent);
     }
 });
 

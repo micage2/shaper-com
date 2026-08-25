@@ -17,14 +17,10 @@ function createTreeViewTest() {
     const addFolderBtn = $$(Button, {
         label: '+ Folder',
         onClick: () => {
-            const selected = treeView.getSelected();
-            const depth = selected ? selected.getDepth() + 1 : 0;
-            
             treeView.add({
                 label: 'New Folder',
                 icon: '📁',
                 type: 'folder',
-                depth: depth
             });
         }
     });
@@ -32,14 +28,10 @@ function createTreeViewTest() {
     const addLeafBtn = $$(Button, {
         label: '+ File',
         onClick: () => {
-            const selected = treeView.getSelected();
-            const depth = selected ? selected.getDepth() + 1 : 0;
-            
             treeView.add({
                 label: 'New Leaf',
                 icon: '📄',
                 type: 'leaf',
-                depth: depth
             });
         }
     });

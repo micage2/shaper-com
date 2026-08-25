@@ -15,13 +15,44 @@ function createModelTreeTest(model) {
     let wrapper = null;
     let treeView = null;
     
+    function addNodes(nodes, iTreeView) {
+        const stack = [];
+        
+        for (const node of nodes) {
+            stack.push({ node, parent: null });
+        }
+        
+        while (stack.length > 0) {
+            const { node, parent } = stack.pop();
+            
+            if (parent) {
+                iTreeView.select(parent, true);
+            } else {
+                iTreeView.select(null, true);
+            }
+            
+            const item = iTreeView.add({
+                label: node.label,
+                icon: node.icon,
+                type: node.type,
+                data: node.data
+            });
+            
+            if (node.children && node.children.length > 0) {
+                iTreeView.select(item, true);
+                
+                for (let i = node.children.length - 1; i >= 0; i--) {
+                    stack.push({ node: node.children[i], parent: item });
+                }
+            }
+        }
+    }
+    
     function buildTreeView(rootTableUuid) {
         const newTreeView = $$(TreeView, { itemClsid: TreeItem });
         
-        const items = treeIface.buildTree(rootTableUuid);
-        for (const itemData of items) {
-            newTreeView.add(itemData);
-        }
+        const roots = treeIface.buildTree(rootTableUuid);
+        addNodes(roots, newTreeView);
         
         return newTreeView;
     }
