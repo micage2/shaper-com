@@ -36,7 +36,7 @@ const lvt = ListViewTest();
 
 const pvt = PropertyViewTest();
 
-const tbs = $$(TBS, {
+const tbs = () => $$(TBS, {
     topHeight: 32, 
     top: Simple('Top'),
     bottom: Simple('Bottom'),
@@ -47,7 +47,8 @@ tabView
     .add('ModelTreeTest', mtt, { icon: '🌼' })
     .add('ModelView', ModelView(model), {})
     // .add('../dom-comps/tab-view.js', Simple('Tab 2 Content'), { icon: '🀥' })
-    .add('Tab 3', tbs, { icon: '⌛' })
+    .add('Tab 3', tbs(), { icon: '⌛' })
+    .add('Tab 4', tbs(), { icon: '🌼' })
     // .add('GridToolbarTest', gtt, { icon: '🧰' })
     .add('ListViewTest', lvt, { icon: '📋' })
     .add('PropertyViewTest', pvt, { icon: '📋' })
