@@ -63,21 +63,19 @@ function ctor(args = {}) {
     
     return {
         getHost() { return host; },
-        getInstance() { return { ratio, update }; }
+        getInstance() { return { update }; },
+        postCreate(instance) {
+            if (args.left) {
+                DOM.attach(args.left, this, { slot: 'left' });
+            }
+            if (args.right) {
+                DOM.attach(args.right, this, { slot: 'right' });
+            }
+        }
     };
 }
 
-const ILeftRight = (instance) => ({
-    setLeft(child) {
-        DOM.attach(child, this, { slot: 'left' });
-        return this;
-    },
-    
-    setRight(child) {
-        DOM.attach(child, this, { slot: 'right' });
-        return this;
-    }
-});
+const ILeftRight = (instance) => ({});
 
 const info = {
     clsid: 'jscom.dom-comps.left-right',

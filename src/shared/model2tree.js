@@ -1,20 +1,48 @@
-function createTreeInterface(model) {
+function createTreeInterface(model, config = {}) {
+    const tableIcons = config.icons || {};
     
-    function getRowLabel(table, rowIdx) {
+    function getIcon(tableName) {
+        return tableIcons[tableName] || '📄';
+    }
+    
+    function getRowLabel(table, rowIdx, linkColumnName = null) {
         const row = table.rows[rowIdx];
         if (!row) return `Row ${rowIdx}`;
         
+        let displayName = null;
+        
         const nameColumn = table.columns.find(col => col.name === 'name');
-        if (nameColumn) {
-            return row.data[nameColumn.colId] || `Row ${rowIdx}`;
+        if (nameColumn && row.data[nameColumn.colId]) {
+            displayName = row.data[nameColumn.colId];
         }
         
-        const stringColumn = table.columns.find(col => col.type === 1);
-        if (stringColumn) {
-            return row.data[stringColumn.colId] || `Row ${rowIdx}`;
+        if (!displayName) {
+            for (const column of table.columns) {
+                if (column.type === 42 && column.targetTableUuid) {
+                    const targetTable = model.getTable(column.targetTableUuid);
+                    if (targetTable && targetTable.columns.some(col => col.name === 'name')) {
+                        const targetRowIdx = row.data[column.colId];
+                        if (targetRowIdx !== null && targetRowIdx !== undefined) {
+                            displayName = getRowLabel(targetTable, targetRowIdx).split(' (')[0];
+                            break;
+                        }
+                    }
+                }
+            }
         }
         
-        return `Row ${rowIdx}`;
+        if (!displayName) {
+            const stringColumn = table.columns.find(col => col.type === 1);
+            if (stringColumn) {
+                displayName = row.data[stringColumn.colId];
+            }
+        }
+        
+        if (!displayName) {
+            displayName = `Row ${rowIdx}`;
+        }
+        
+        return `${displayName} (${table.name})`;
     }
     
     function findChildren(tableUuid, rowIdx) {
@@ -28,7 +56,8 @@ function createTreeInterface(model) {
                         if (row.data[column.colId] === rowIdx) {
                             children.push({
                                 tableUuid: otherTable.uuid,
-                                rowIdx: i
+                                rowIdx: i,
+                                linkColumnName: column.name
                             });
                         }
                     }
@@ -44,18 +73,19 @@ function createTreeInterface(model) {
             const table = model.getTable(rootTableUuid);
             if (!table) return [];
             
-            const roots = [];
-            const visited = new Set();
+            const rootNodes = [];
             
-            for (let idx = table.rows.length - 1; idx >= 0; idx--) {
-                const stack = [{ 
-                    tableUuid: rootTableUuid, 
-                    rowIdx: idx, 
-                    parentNode: null 
+            for (let idx = 0; idx < table.rows.length; idx++) {
+                const visited = new Set();
+                const stack = [{
+                    tableUuid: rootTableUuid,
+                    rowIdx: idx,
+                    parentNode: null,
+                    linkColumnName: null
                 }];
                 
                 while (stack.length > 0) {
-                    const { tableUuid, rowIdx, parentNode } = stack.pop();
+                    const { tableUuid, rowIdx, parentNode, linkColumnName } = stack.pop();
                     const key = `${tableUuid}:${rowIdx}`;
                     
                     if (visited.has(key)) continue;
@@ -63,8 +93,8 @@ function createTreeInterface(model) {
                     
                     const currentTable = model.getTable(tableUuid);
                     const node = {
-                        label: getRowLabel(currentTable, rowIdx),
-                        icon: '📄',
+                        label: getRowLabel(currentTable, rowIdx, linkColumnName),
+                        icon: getIcon(currentTable.name),
                         type: 'folder',
                         data: { tableUuid, rowId: rowIdx },
                         children: []
@@ -73,7 +103,7 @@ function createTreeInterface(model) {
                     if (parentNode) {
                         parentNode.children.push(node);
                     } else {
-                        roots.push(node);
+                        rootNodes.push(node);
                     }
                     
                     const childRefs = findChildren(tableUuid, rowIdx);
@@ -81,13 +111,14 @@ function createTreeInterface(model) {
                         stack.push({
                             tableUuid: childRefs[i].tableUuid,
                             rowIdx: childRefs[i].rowIdx,
-                            parentNode: node
+                            parentNode: node,
+                            linkColumnName: childRefs[i].linkColumnName
                         });
                     }
                 }
             }
             
-            return roots;
+            return rootNodes;
         }
     };
 }

@@ -104,7 +104,11 @@ function create(clsid, options = {}, ifaceName) {
     
     const instance = icomp.getInstance();
     const host = icomp.getHost();
-    
+
+    // automatic class name
+    const className = clsid.split('.').pop() + '-host';
+    host.classList.add(className);
+
     // Store instance and host
     ifaceToInstance.set(iface, instance);
     instanceHosts.set(instance, host);

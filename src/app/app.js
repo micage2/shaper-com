@@ -13,6 +13,9 @@ import GridToolbarTest from '../compounds/grid-toolbar-test.js';
 import ModelView from '../compounds/model-view.js';
 import TreeViewTest from '../compounds/tree-view-test.js';
 import ModelTreeTest from '../compounds/model-tree-test.js';
+import ListViewTest from '../compounds/list-view-test.js';
+import LayoutTest from '../compounds/layout-test.js';
+import PropertyViewTest from '../compounds/property-view-test.js';
 
 const $$ = DOM.create;
 const Simple = (title) => $$(SimpleView, { title });
@@ -29,8 +32,9 @@ const etbt = ETBT();
 const gvt = GVT(model);
 const gtt = GridToolbarTest();
 const mtt = ModelTreeTest(model);
+const lvt = ListViewTest();
 
-const lr_gvt_simple = $$(LR, { ratio: 1 }).setLeft(gvt).setRight(Simple('Right'));
+const pvt = PropertyViewTest();
 
 const tbs = $$(TBS, {
     topHeight: 32, 
@@ -45,5 +49,7 @@ tabView
     // .add('../dom-comps/tab-view.js', Simple('Tab 2 Content'), { icon: '🀥' })
     .add('Tab 3', tbs, { icon: '⌛' })
     // .add('GridToolbarTest', gtt, { icon: '🧰' })
+    .add('ListViewTest', lvt, { icon: '📋' })
+    .add('PropertyViewTest', pvt, { icon: '📋' })
 
 DOM.mount(tabView);

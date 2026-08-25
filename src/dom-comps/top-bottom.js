@@ -20,7 +20,7 @@ function ctor(args = {}) {
     const minBottom = args.minBottom || 50;
     let isDragging = false;
     
-    const update = () => {
+    function update() {
         const total = host.offsetHeight;
         const dividerHeight = divider.offsetHeight;
         const availableHeight = total - dividerHeight;
@@ -30,7 +30,7 @@ function ctor(args = {}) {
         
         topPane.style.height = topHeight + 'px';
         bottomPane.style.height = bottomHeight + 'px';
-    };
+    }
     
     divider.addEventListener('pointerdown', (e) => {
         e.preventDefault();
@@ -63,21 +63,19 @@ function ctor(args = {}) {
     
     return {
         getHost() { return host; },
-        getInstance() { return { ratio, update }; }
+        getInstance() { return { update }; },
+        postCreate(instance) {
+            if (args.top) {
+                DOM.attach(args.top, this, { slot: 'top' });
+            }
+            if (args.bottom) {
+                DOM.attach(args.bottom, this, { slot: 'bottom' });
+            }
+        }
     };
 }
 
-const ITopBottom = (self) => ({
-    setTop(child) {
-        DOM.attach(child, this, { slot: 'top' });
-        return this;
-    },
-    
-    setBottom(child) {
-        DOM.attach(child, this, { slot: 'bottom' });
-        return this;
-    }
-});
+const ITopBottom = (instance) => ({});
 
 const info = {
     clsid: 'jscom.dom-comps.top-bottom',
@@ -86,7 +84,7 @@ const info = {
 };
 
 DOM.register(ctor, (role) => {
-    role('TopBottom', (self) => ITopBottom(self), true);
+    role('TopBottom', ITopBottom, true);
 }, info);
 
 export default info.clsid;

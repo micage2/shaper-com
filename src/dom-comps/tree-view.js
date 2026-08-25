@@ -152,7 +152,7 @@ const ITreeView = (instance) => ({
 
         this.emit('item-added', item);
 
-        console.log("--".repeat(item.getDepth()), itemData.label);
+        // console.log("--".repeat(item.getDepth()), itemData.label);
         
         return item;
     },

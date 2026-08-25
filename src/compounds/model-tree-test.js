@@ -10,8 +10,16 @@ const $$ = DOM.create;
 
 function createModelTreeTest(model) {
     const tableEntries = Array.from(model.tables.values());
-    const treeIface = createTreeInterface(model);
-    
+    const treeIface = createTreeInterface(model, {
+        icons: {
+            'City': '🏙',
+            'Building': '🏢',
+            'Country': '🌍',
+            'Person': '👤',
+            'Architect': '📐'
+        }
+    });
+        
     let wrapper = null;
     let treeView = null;
     
