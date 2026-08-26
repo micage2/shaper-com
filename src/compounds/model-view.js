@@ -7,10 +7,11 @@ import SelectBox from '../dom-comps/select-box.js';
 import SimpleView from '../dom-comps/simple-view.js';
 import TopBottomStatic from '../dom-comps/top-bottom-static.js';
 import { createGridInterface } from '../shared/model2grid.js';
+import LayoutTest from './layout-test.js';
 
 const $$ = DOM.create;
 
-function createModelView(model) {
+function createModelView(model, layoutTest = false) {
     const tableEntries = Array.from(model.tables.values());
     let currentTableUuid = tableEntries[0].uuid;
     
@@ -153,7 +154,7 @@ function createModelView(model) {
         bottom: gridDialog
     });
     
-    return tbs;
+    return layoutTest ? LayoutTest(tbs) : tbs;
 }
 
 export default createModelView;

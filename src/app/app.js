@@ -31,7 +31,7 @@ const tabView = $$(TabView);
 const etbt = ETBT();
 const gvt = GVT(model);
 const gtt = GridToolbarTest();
-const mtt = ModelTreeTest(model);
+const mtt = ModelTreeTest(model, true); // layoutTest = true
 const lvt = ListViewTest();
 
 const pvt = PropertyViewTest();
@@ -45,7 +45,7 @@ const tbs = () => $$(TBS, {
 tabView
     .add('TreeView', TreeViewTest(model), { icon: '🌳' })
     .add('ModelTreeTest', mtt, { icon: '🌼' })
-    .add('ModelView', ModelView(model), {})
+    .add('ModelView', ModelView(model, true), {})
     // .add('../dom-comps/tab-view.js', Simple('Tab 2 Content'), { icon: '🀥' })
     .add('Tab 3', tbs(), { icon: '⌛' })
     .add('Tab 4', tbs(), { icon: '🌼' })

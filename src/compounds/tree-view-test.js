@@ -4,10 +4,11 @@ import TreeItem from '../dom-comps/tree-item.js';
 import Toolbar from '../dom-comps/toolbar.js';
 import Button from '../dom-comps/button.js';
 import TopBottomStatic from '../dom-comps/top-bottom-static.js';
+import LayoutTest from './layout-test.js';
 
 const $$ = DOM.create;
 
-function createTreeViewTest() {
+function createTreeViewTest(layoutTest = false) {
     const treeView = $$(TreeView, {
         itemClsid: TreeItem
     });
@@ -56,7 +57,7 @@ function createTreeViewTest() {
         bottom: treeView
     });
     
-    return test;
+    return layoutTest ? LayoutTest(test) : test;
 }
 
 export default createTreeViewTest;

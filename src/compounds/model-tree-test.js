@@ -5,10 +5,11 @@ import SelectBox from '../dom-comps/select-box.js';
 import Toolbar from '../dom-comps/toolbar.js';
 import TopBottomStatic from '../dom-comps/top-bottom-static.js';
 import { createTreeInterface } from '../shared/model2tree.js';
+import LayoutTest from './layout-test.js';
 
 const $$ = DOM.create;
 
-function createModelTreeTest(model) {
+function createModelTreeTest(model, layoutTest) {
     const tableEntries = Array.from(model.tables.values());
     const treeIface = createTreeInterface(model, {
         icons: {
@@ -90,12 +91,12 @@ function createModelTreeTest(model) {
     treeView = buildTreeView(tableEntries[0].uuid);
     
     wrapper = $$(TopBottomStatic, {
-        topHeight: 40,
+        topHeight: 32,
         top: toolbar,
         bottom: treeView
     });
     
-    return wrapper;
+    return layoutTest ? LayoutTest(wrapper) : wrapper;
 }
 
 export default createModelTreeTest;

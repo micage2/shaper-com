@@ -2,7 +2,7 @@ import { DomRegistry as DOM } from '../dom-registry.js';
 
 function ctor(args = {}) {
     const host = document.createElement('select');
-    const data = { value: '' };
+    host.style.cssText = 'padding:6px 12px; border:1px solid #ccc; background:#fff; cursor:pointer; font-size:12px; font-family:Segoe UI, Arial, sans-serif; border-radius:4px;';
     
     for (const option of args.options || []) {
         const opt = document.createElement('option');
@@ -23,17 +23,17 @@ function ctor(args = {}) {
     
     return {
         getHost() { return host; },
-        getInstance() { return data; }
+        getInstance() { return { host }; }
     };
 }
 
 const ISelectBox = (instance) => ({
     getValue() {
-        return instance.value;
+        return instance.host.value;
     },
     
     setValue(value) {
-        instance.value = value;
+        instance.host.value = value;
         return this;
     }
 });

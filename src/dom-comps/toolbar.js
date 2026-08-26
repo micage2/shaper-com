@@ -1,15 +1,8 @@
 import { DomRegistry as DOM } from '../dom-registry.js';
-import { loadFragment } from '../shared/dom-helper.js';
-
-const html_file = "./src/dom-comps/toolbar.html";
-const fragment = await loadFragment(html_file);
 
 function ctor(args = {}) {
     const host = document.createElement('div');
-    const shadow = host.attachShadow({ mode: 'closed' });
-    
-    const clone = fragment.cloneNode(true);
-    shadow.appendChild(clone);
+    host.style.cssText = 'display:flex !important; align-items:center !important; width:100% !important; height:100% !important; gap:8px !important; padding:8px 16px !important; box-sizing:border-box !important; background:#f8f8f8 !important; border-bottom:1px solid #e0e0e0 !important;';
     
     return {
         getHost() { return host; },

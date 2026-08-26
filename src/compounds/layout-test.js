@@ -14,7 +14,7 @@ function createLayoutTest(componentToTest) {
         right: $$(LeftRight, {
             ratio: 0.5,
             left: $$(TopBottom, {
-                ratio: 0.5,
+                ratio: 0.2,
                 top: Simple('Top'),
                 bottom: $$(TopBottom, {
                     ratio: 0.5,
