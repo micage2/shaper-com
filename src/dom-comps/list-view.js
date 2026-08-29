@@ -5,7 +5,7 @@ function ctor(args = {}) {
     
     const host = document.createElement('div');
     host.className = 'list-view';
-    
+    host.style.cssText = 'display:block !important; overflow-y:auto !important; overflow-x:hidden !important; width:100% !important; height:100% !important;';    
     const itemClsid = args.itemClsid;
     
     const state = {
@@ -50,6 +50,7 @@ function ctor(args = {}) {
 
 const IListView = (instance) => ({
     add(itemData) {
+        itemData.depth = 0;
         const item = DOM.create(instance.itemClsid, itemData);
         
         item.on('clicked', () => {
@@ -96,8 +97,15 @@ const IListView = (instance) => ({
 const info = {
     clsid: 'jscom.dom-comps.list-view',
     name: 'ListView',
-    description: 'Flat list of selectable items'
+    description: 'Flat list of selectable items',
+    scheme: {
+        // itemClsid: 'string'
+        itemClsid: { type: 'string', validator: (value) => value.startsWith('jscom.dom-comps.')}
+    }
 };
+
+// idea: itemClsid: { type: 'string', validator: (value) => value.startsWith('jscom.dom-comps.')}
+// idea: height: { type: 'number', validator: (value) => value >= 0 }
 
 DOM.register(ctor, (role) => {
     role('ListView', IListView, true);

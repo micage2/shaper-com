@@ -192,7 +192,13 @@ const ITreeItem = (instance) => ({
 const info = {
     clsid: 'jscom.dom-comps.tree-item',
     name: 'TreeItem',
-    description: 'Tree item with toggle, icon, label, and depth indentation'
+    description: 'Tree item with toggle, icon, label, and depth indentation',
+    scheme: {
+        label: 'string',
+        icon: 'string',
+        type: 'string',
+        depth: 'number'
+    }
 };
 
 DOM.register(ctor, (role) => {

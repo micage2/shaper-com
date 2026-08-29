@@ -2,7 +2,7 @@ import { DomRegistry as DOM } from '../dom-registry.js';
 
 function ctor(args = {}) {
     const host = document.createElement('select');
-    host.style.cssText = 'padding:6px 12px; border:1px solid #ccc; background:#fff; cursor:pointer; font-size:12px; font-family:Segoe UI, Arial, sans-serif; border-radius:4px;';
+    host.style.cssText = 'height: var(--control-height, 28px); padding: var(--control-padding, 4px 12px); border: var(--control-border, 1px solid #ccc); border-radius: var(--control-radius, 4px); font-size: var(--control-font-size, 12px); background:#fff; cursor:pointer; font-family: Segoe UI, Arial, sans-serif;';
     
     for (const option of args.options || []) {
         const opt = document.createElement('option');

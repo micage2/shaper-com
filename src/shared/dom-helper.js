@@ -20,3 +20,13 @@ export function makeFragment(str) {
 
     return fragment;
 }
+
+export async function LoadFile(path) {
+    const response = await fetch(path);
+    if (!response.ok) {
+        console.error(`[LoadFile] Failed to load: ${path}`);
+        return null;
+    }
+    return await response.json();
+}
+

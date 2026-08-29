@@ -34,13 +34,51 @@ function register(ctor, roleCollector, info = {}) {
     return true;
 }
 
+function validateScheme(scheme, data, path = '') {
+    const errors = [];
+    for (const [key, spec] of Object.entries(scheme)) {
+        const value = data?.[key];
+        const fullPath = path ? `${path}.${key}` : key;
+        
+        if (value === undefined || value === null) {
+            errors.push(`Missing or null: ${fullPath}`);
+            continue;
+        }
+        
+        const expectedType = typeof spec === 'string' ? spec : spec.type;
+        
+        if (typeof expectedType === 'object' && !Array.isArray(expectedType)) {
+            errors.push(...validateScheme(expectedType, value, fullPath));
+        } else if (expectedType === 'array') {
+            if (!Array.isArray(value)) errors.push(`${fullPath} should be array`);
+        } else if (typeof value !== expectedType) {
+            errors.push(`${fullPath} should be ${expectedType}, got ${typeof value}`);
+        }
+        
+        if (typeof spec === 'object' && spec.validator) {
+            if (!spec.validator(value)) {
+                errors.push(`${fullPath} failed validation`);
+            }
+        }
+    }
+    return errors;
+}
+
 function create(clsid, options = {}, ifaceName) {
     const klass = klasses.get(clsid);
     if (!klass) {
         console.error(`[DOM] Unknown component type: ${clsid}`);
         return null;
     }
-    
+
+    if (klass.info.scheme) {
+        const errors = validateScheme(klass.info.scheme, options);
+        if (errors.length > 0) {
+            console.error(`[DOM] Invalid data for ${clsid}:`, errors);
+            return null;
+        }
+    }
+
     // Create base interface
     const iface = {
         uid: gen_id(),

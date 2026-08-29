@@ -119,6 +119,23 @@ function createTreeInterface(model, config = {}) {
             }
             
             return rootNodes;
+        },
+        
+        getChildren(tableUuid, rowIdx) {
+            const table = model.getTable(tableUuid);
+            if (!table) return [];
+            
+            const childRefs = findChildren(tableUuid, rowIdx);
+            
+            return childRefs.map(ref => {
+                const otherTable = model.getTable(ref.tableUuid);
+                return {
+                    label: getRowLabel(otherTable, ref.rowIdx, ref.linkColumnName),
+                    icon: getIcon(otherTable.name),
+                    type: 'folder',
+                    data: { tableUuid: ref.tableUuid, rowId: ref.rowIdx }
+                };
+            });
         }
     };
 }

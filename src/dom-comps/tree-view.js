@@ -5,6 +5,7 @@ function ctor(args = {}) {
     
     const host = document.createElement('div');
     host.className = 'tree-view';
+    host.style.cssText = 'display:block !important; overflow-y:auto !important; overflow-x:hidden !important; width:100% !important; height:100% !important;';    
     
     const itemClsid = args.itemClsid;
     
@@ -105,29 +106,17 @@ function ctor(args = {}) {
 
 const ITreeView = (instance) => ({
     add(itemData) {
-        let item = null;
-
-        item = DOM.create(instance.itemClsid, {
-            ...itemData
-        });
-        
-        item.on('toggle-clicked', () => {
-            instance.toggleItem(item);
-        });
-        
-        item.on('clicked', () => {
-            instance.selectItem(item);
-        });
-        
-        item.on('label-changed', (newLabel) => {
-            this.emit('item-label-changed', { item, newLabel });
-        });
-        
         const selected = this.getSelected();
-        if (selected && !selected.isFolder()) return;        
+        if (selected && !selected.isFolder()) {
+            console.log("No folder", itemData);            
+            return;
+        };
         
+        let item = null;
         if (selected) {
-            item.setDepth(selected.getDepth() + 1);
+            itemData.depth = selected.getDepth() + 1
+            item = DOM.create(instance.itemClsid, itemData);
+
             const selectedIdx = instance.state.items.indexOf(selected);
             const endIdx = instance.getSubtreeEndIndex(selectedIdx);
             instance.state.items.splice(endIdx + 1, 0, item);
@@ -141,11 +130,24 @@ const ITreeView = (instance) => ({
             }
         }
         else {
+            itemData.depth = 0;
+            item = DOM.create(instance.itemClsid, itemData);
             instance.state.items.push(item);
             DOM.attach(item, this);
         }
 
-
+        item.on('toggle-clicked', () => {
+            instance.toggleItem(item);
+        });
+        
+        item.on('clicked', () => {
+            instance.selectItem(item);
+        });
+        
+        item.on('label-changed', (newLabel) => {
+            this.emit('item-label-changed', { item, newLabel });
+        });
+        
         if (itemData.autoSelect) {
             instance.selectItem(item, true);
         }
@@ -190,7 +192,10 @@ const ITreeView = (instance) => ({
 const info = {
     clsid: 'jscom.dom-comps.tree-view',
     name: 'TreeView',
-    description: 'Flat list of tree items with folding and selection'
+    description: 'Flat list of tree items with folding and selection',
+    scheme: {
+        itemClsid: 'string'
+    }
 };
 
 DOM.register(ctor, (role) => {

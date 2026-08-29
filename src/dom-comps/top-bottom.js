@@ -63,7 +63,7 @@ function ctor(args = {}) {
     
     return {
         getHost() { return host; },
-        getInstance() { return { update }; },
+        getInstance() { return { update, topChild: args.top, bottomChild: args.bottom }; },
         postCreate(instance) {
             if (args.top) {
                 DOM.attach(args.top, this, { slot: 'top' });
@@ -75,7 +75,25 @@ function ctor(args = {}) {
     };
 }
 
-const ITopBottom = (instance) => ({});
+const ITopBottom = (instance) => ({
+    setTop(child) {
+        if (instance.topChild) {
+            DOM.detach(instance.topChild);
+        }
+        DOM.attach(child, this, { slot: 'top' });
+        instance.topChild = child;
+        return this;
+    },
+    
+    setBottom(child) {
+        if (instance.bottomChild) {
+            DOM.detach(instance.bottomChild);
+        }
+        DOM.attach(child, this, { slot: 'bottom' });
+        instance.bottomChild = child;
+        return this;
+    }    
+});
 
 const info = {
     clsid: 'jscom.dom-comps.top-bottom',

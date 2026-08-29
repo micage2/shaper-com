@@ -1,8 +1,8 @@
 <style>
     :host {
-        display: inline-block;
-        margin: 0 4px;
-        vertical-align: middle;
+        display: inline-block !important;
+        margin: 0 4px !important;
+        vertical-align: middle !important;
     }
     .idle-container {
         display: inline-block;
@@ -11,58 +11,59 @@
         display: inline-block;
     }
     .idle-button {
-        padding: 4px 8px;
-        border: 1px solid #ccc;
+        height: var(--control-height, 28px);
+        padding: var(--control-padding, 4px 12px);
+        border: var(--control-border, 1px solid #ccc);
+        border-radius: var(--control-radius, 4px);
+        font-size: var(--control-font-size, 12px);
+        font-family: Segoe UI, Arial, sans-serif;
         background: #fff;
         cursor: pointer;
-        font-size: 12px;
         white-space: nowrap;
-        font-family: 'Segoe UI', Arial, sans-serif;
     }
     .idle-button:hover {
-        background: #e8e8e8;
+        background: #f0f0f0;
     }
     .idle-button.danger {
         color: #d32f2f;
-        border: none;
-        background: transparent;
-    }
-    .idle-button.danger:hover {
-        background: #ffebee;
-        border-radius: 4px;
     }
     .edit-area {
         display: flex;
         align-items: center;
         gap: 4px;
-        justify-content: center;
     }
     .edit-label {
-        font-size: 12px;
+        font-size: var(--control-font-size, 12px);
         font-weight: bold;
         color: #333;
         margin-right: 4px;
         white-space: nowrap;
-        font-family: 'Segoe UI', Arial, sans-serif;
-        user-select: none;
+        font-family: Segoe UI, Arial, sans-serif;
     }
     .edit-input,
     .edit-select {
-        padding: 4px 8px;
-        border: 1px solid #ccc;
-        font-size: 12px;
-        font-family: 'Segoe UI', Arial, sans-serif;
+        height: var(--control-height, 28px);
+        padding: var(--control-padding, 4px 12px);
+        border: var(--control-border, 1px solid #ccc);
+        border-radius: var(--control-radius, 4px);
+        font-size: var(--control-font-size, 12px);
+        font-family: Segoe UI, Arial, sans-serif;
+        background: #fff;
+        box-sizing: border-box;
     }
     .edit-button {
-        padding: 4px 8px;
-        border: 1px solid #ccc;
+        height: var(--control-height, 28px);
+        padding: var(--control-padding, 4px 12px);
+        border: var(--control-border, 1px solid #ccc);
+        border-radius: var(--control-radius, 4px);
+        font-size: var(--control-font-size, 12px);
+        font-family: Segoe UI, Arial, sans-serif;
         background: #fff;
         cursor: pointer;
-        font-size: 12px;
-        font-family: 'Segoe UI', Arial, sans-serif;
+        white-space: nowrap;
     }
     .edit-button:hover {
-        background: #e8e8e8;
+        background: #f0f0f0;
     }
 </style>
 <div class="idle-container"></div>
