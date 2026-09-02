@@ -5,9 +5,7 @@ function ctor(args = {}) {
     host.style.cssText = 'height: var(--control-height, 28px); padding: var(--control-padding, 4px 12px); border: var(--control-border, 1px solid #ccc); border-radius: var(--control-radius, 4px); font-size: var(--control-font-size, 12px); background:#fff; cursor:pointer; white-space:nowrap; font-family: Segoe UI, Arial, sans-serif;';
     host.textContent = args.label || '';
     
-    if (args.onClick) {
-        host.addEventListener('click', args.onClick);
-    }
+    host.addEventListener('click', () => this.emit('click'));
     
     return {
         getHost() { return host; },

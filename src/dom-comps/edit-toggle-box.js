@@ -1,3 +1,5 @@
+// src/dom-comps/edit-toggle-box.js
+
 import { DomRegistry as DOM } from '../dom-registry.js';
 import { loadFragment } from '../shared/dom-helper.js';
 
@@ -17,9 +19,23 @@ function ctor(args = {}) {
     const centerSection = shadow.querySelector('.section-center');
     const rightSection = shadow.querySelector('.section-right');
     
+    function addSectionLabel(section, labelText) {
+        if (!labelText) return;
+        
+        const label = document.createElement('span');
+        label.className = 'section-label';
+        label.textContent = labelText;
+        label.style.cssText = 'font-size: var(--control-font-size, 12px); color: #666; margin-right: 4px; user-select: none;';
+        section.insertBefore(label, section.firstChild);
+    }
+    
+    addSectionLabel(leftSection, args.leftLabel);
+    addSectionLabel(centerSection, args.centerLabel);
+    addSectionLabel(rightSection, args.rightLabel);
+    
     return {
         getHost() { return host; },
-        getInstance() { return { leftSection, centerSection, rightSection, wrappers }; }
+        getInstance() { return { host, leftSection, centerSection, rightSection, wrappers }; }
     };
 }
 
@@ -44,18 +60,25 @@ const IEditToggleBox = (instance) => ({
         
         DOM.attach(editToggleIface, this, { slot: slot.name });
         
-        editToggleIface.on('edit-toggle.edit', () => {
+        editToggleIface.on('edit', () => {
             for (const [iface, w] of instance.wrappers) {
                 if (iface !== editToggleIface) {
                     w.style.display = 'none';
                 }
             }
+
+            // instance.leftSection.firstChild.style.display = 'none';
+            instance.centerSection.firstChild.style.display = 'none';
+            instance.rightSection.firstChild.style.display = 'none';
         });
         
-        editToggleIface.on('edit-toggle.idle', () => {
+        editToggleIface.on('idle', () => {
             for (const w of instance.wrappers.values()) {
                 w.style.display = '';
             }
+            // instance.leftSection.firstChild.style.display = '';
+            instance.centerSection.firstChild.style.display = '';
+            instance.rightSection.firstChild.style.display = '';
         });
         
         return this;
@@ -66,7 +89,12 @@ const IEditToggleBox = (instance) => ({
 const info = {
     clsid: 'jscom.dom-comps.edit-toggle-box',
     name: 'EditToggleBox',
-    description: 'Container for EditToggles with exclusive edit mode'
+    description: 'Container for EditToggles with exclusive edit mode',
+    scheme: {
+        leftLabel: 'string',
+        centerLabel: 'string',
+        rightLabel: 'string'
+    }
 };
 
 DOM.register(ctor, (role) => {

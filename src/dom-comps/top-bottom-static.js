@@ -42,7 +42,23 @@ function ctor(args = {}) {
 }
 
 const ITopBottomStatic = (instance) => ({
-    foo() {}
+    setTop(child) {
+        if (instance.topPane) {
+            DOM.detach(instance.topPane);
+        }
+        DOM.attach(child, this, { slot: 'top' });
+        instance.topPane = child;
+        return this;
+    },
+    
+    setBottom(child) {
+        if (instance.bottomPane) {
+            DOM.detach(instance.bottomPane);
+        }
+        DOM.attach(child, this, { slot: 'bottom' });
+        instance.bottomPane = child;
+        return this;
+    }    
 });
 
 const info = {

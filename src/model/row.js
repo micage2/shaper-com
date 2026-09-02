@@ -26,4 +26,3 @@ export class Row {
         return new Row(data.id, data.data, data.refCount);
     }
 }
-

@@ -34,7 +34,7 @@ function register(ctor, roleCollector, info = {}) {
     return true;
 }
 
-function validateScheme(scheme, data, path = '') {
+function __1validateScheme(scheme, data, path = '') {
     const errors = [];
     for (const [key, spec] of Object.entries(scheme)) {
         const value = data?.[key];
@@ -45,7 +45,7 @@ function validateScheme(scheme, data, path = '') {
             continue;
         }
         
-        const expectedType = typeof spec === 'string' ? spec : spec.type;
+        const expectedType = typeof spec === 'string' ? spec : typeof spec;
         
         if (typeof expectedType === 'object' && !Array.isArray(expectedType)) {
             errors.push(...validateScheme(expectedType, value, fullPath));
@@ -61,6 +61,128 @@ function validateScheme(scheme, data, path = '') {
             }
         }
     }
+    return errors;
+}
+
+function __2validateScheme(scheme, data, path = '') {
+    const errors = [];
+    const stack = [{ scheme, data, path }];
+    
+    while (stack.length > 0) {
+        const { scheme: currentScheme, data: currentData, path: currentPath } = stack.pop();
+        
+        for (const [key, spec] of Object.entries(currentScheme)) {
+            const value = currentData?.[key];
+            const fullPath = currentPath ? `${currentPath}.${key}` : key;
+            
+            if (value === undefined || value === null) {
+                const isRequired = typeof spec === 'object' && spec.required === true;
+                if (isRequired) {
+                    errors.push(`Missing or null: ${fullPath}`);
+                }
+                continue;
+            }
+            
+            if (typeof spec === 'string') {
+                const expectedType = spec;
+                if (expectedType === 'array' && !Array.isArray(value)) {
+                    errors.push(`${fullPath} should be array`);
+                } else if (expectedType !== 'array' && typeof value !== expectedType) {
+                    errors.push(`${fullPath} should be ${expectedType}, got ${typeof value}`);
+                }
+            } else if (typeof spec === 'object') {
+                // Nested scheme or spec with type
+                if (spec.type) {
+                    const expectedType = spec.type;
+                    if (expectedType === 'array' && !Array.isArray(value)) {
+                        errors.push(`${fullPath} should be array`);
+                    } else if (expectedType !== 'array' && typeof value !== expectedType) {
+                        errors.push(`${fullPath} should be ${expectedType}, got ${typeof value}`);
+                    }
+                }
+                
+                if (spec.validator && !spec.validator(value)) {
+                    errors.push(`${fullPath} failed validation`);
+                }
+                
+                if (spec.scheme && typeof value === 'object') {
+                    stack.push({ scheme: spec.scheme, data: value, path: fullPath });
+                }
+            }
+        }
+    }
+    
+    return errors;
+}
+
+function validateScheme(scheme, data, path = '') {
+    const errors = [];
+    const stack = [{ scheme, data, path }];
+    
+    while (stack.length > 0) {
+        const { scheme: currentScheme, data: currentData, path: currentPath } = stack.pop();
+        
+        for (const [key, spec] of Object.entries(currentScheme)) {
+            const value = currentData?.[key];
+            const fullPath = currentPath ? `${currentPath}.${key}` : key;
+            
+            if (value === undefined || value === null) {
+                const isRequired = typeof spec === 'object' && !Array.isArray(spec) && spec.required === true;
+                if (isRequired) {
+                    errors.push(`Missing or null: ${fullPath}`);
+                }
+                continue;
+            }
+            
+            if (typeof spec === 'string') {
+                if (spec === 'array' && !Array.isArray(value)) {
+                    errors.push(`${fullPath} should be array`);
+                } else if (spec !== 'array' && typeof value !== spec) {
+                    errors.push(`${fullPath} should be ${spec}, got ${typeof value}`);
+                }
+            } else if (Array.isArray(spec)) {
+                if (!Array.isArray(value)) {
+                    errors.push(`${fullPath} should be array`);
+                } else if (spec.length > 0) {
+                    const itemSpec = spec[0];
+                    for (let i = 0; i < value.length; i++) {
+                        stack.push({ 
+                            scheme: { [`[${i}]`]: itemSpec }, 
+                            data: { [`[${i}]`]: value[i] }, 
+                            path: fullPath 
+                        });
+                    }
+                }
+            } else if (typeof spec === 'object') {
+                // Check type if specified
+                if (spec.type) {
+                    if (spec.type === 'array' && !Array.isArray(value)) {
+                        errors.push(`${fullPath} should be array`);
+                    } else if (spec.type !== 'array' && typeof value !== spec.type) {
+                        errors.push(`${fullPath} should be ${spec.type}, got ${typeof value}`);
+                    }
+                }
+                
+                // Check validator
+                if (spec.validator && !spec.validator(value)) {
+                    errors.push(`${fullPath} failed validation`);
+                }
+                
+                // Treat object spec as nested scheme (excluding special fields)
+                const nestedScheme = {};
+                for (const [nestedKey, nestedSpec] of Object.entries(spec)) {
+                    if (nestedKey !== 'type' && nestedKey !== 'validator' && nestedKey !== 'required') {
+                        nestedScheme[nestedKey] = nestedSpec;
+                    }
+                }
+                
+                if (Object.keys(nestedScheme).length > 0 && typeof value === 'object') {
+                    stack.push({ scheme: nestedScheme, data: value, path: fullPath });
+                }
+            }
+        }
+    }
+    
     return errors;
 }
 

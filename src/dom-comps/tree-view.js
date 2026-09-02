@@ -54,19 +54,6 @@ function ctor(args = {}) {
         }
     }
     
-    function __selectItem(item, silent) {
-        if (state.selectedItem === item) return;
-        
-        if (state.selectedItem) {
-            state.selectedItem.setSelected(false);
-        }
-        
-        state.selectedItem = item;
-        state.selectedItem.setSelected(true);
-        
-        if (!silent) self.emit('item-selected', item);
-    }
-
     function selectItem(item, silent = false) {
         if (item === null) {
             if (state.selectedItem) {

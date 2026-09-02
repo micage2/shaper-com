@@ -17,9 +17,18 @@ function ctor(args = {}) {
 }
 
 const IToolbar = (instance) => ({
-    add(child) {
-        DOM.attach(child, this);
+    add(child, options = {}) {
+        if (options.after) {
+            DOM.attach(child, options.after, { mode: 'after' });
+        }
+        else {
+            DOM.attach(child, this);
+        }
         return this;
+    },
+    remove(child) {
+        DOM.detach(child, this);
+        return child;
     }
 });
 

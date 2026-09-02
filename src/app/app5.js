@@ -18,8 +18,7 @@ import ModelTreeTest from '../compounds/model-tree-test.js';
 import ListViewTest from '../compounds/list-view-test.js';
 import LayoutTest from '../compounds/layout-test.js';
 import PropertyViewTest from '../compounds/property-view-test.js';
-import EditToggleNew from '../compounds/edit-toggle-box-new-test.js';
-import ModelTreeEditor from '../compounds/model-tree-editor-3.js';
+import ModelTreeEditor from '../compounds/model-tree-editor.js';
 
 const $$ = DOM.create;
 const Simple = (title) => $$(SimpleView, { title });
@@ -42,7 +41,6 @@ const tabView = $$(TabView);
 // const pvt = PropertyViewTest();
 // const mte = ModelTreeEditor(model);
 
-// test compound factory for tabs
 const tbs = () => $$(TBS, {
     topHeight: 32, 
     top: Simple('Top'),
@@ -51,15 +49,12 @@ const tbs = () => $$(TBS, {
 
 tabView
     .add('ModelTreeEditor', ModelTreeEditor(model), { icon: '📋' })
-    .add('EditToggleNew - Test', EditToggleNew(), { icon: '🌼' })
     .add('TreeView', TreeViewTest(model), { icon: '🌳' })
     // .add('ModelTreeTest', mtt, { icon: '🌼' })
-    // .add('ModelView', ModelView(model, true), {})
+    .add('ModelView', ModelView(model, true), {})
     // .add('Tab 3', tbs(), { icon: '⌛' })
     // .add('Tab 4', tbs(), { icon: '🌼' })
     // .add('ListViewTest', lvt, { icon: '📋' })
     // .add('PropertyViewTest', pvt, { icon: '📋' })
 
 DOM.mount(tabView);
-
-window.mmm = model;
