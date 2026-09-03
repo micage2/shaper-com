@@ -154,7 +154,8 @@ function createModelView(model, layoutTest = false) {
         bottom: gridDialog
     });
     
-    return layoutTest ? LayoutTest(tbs) : tbs;
+    // return layoutTest ? LayoutTest(tbs) : tbs;
+    return tbs;
 }
 
 export default createModelView;

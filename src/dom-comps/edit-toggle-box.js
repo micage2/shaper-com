@@ -69,7 +69,8 @@ const IEditToggleBox = (instance) => ({
 
             // instance.leftSection.firstChild.style.display = 'none';
             instance.centerSection.firstChild.style.display = 'none';
-            instance.rightSection.firstChild.style.display = 'none';
+            if (instance.rightSection.firstChild)
+                instance.rightSection.firstChild.style.display = 'none';
         });
         
         editToggleIface.on('idle', () => {

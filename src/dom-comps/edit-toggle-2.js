@@ -18,8 +18,8 @@ function ctor(args = {}) {
     editSlot.style.cssText = 'display:none;align-items:center;gap:4px;';
     shadow.appendChild(editSlot);
     
-    let idleCompound = args.idleCompound || null;
-    let editCompound = args.editCompound || null;
+    let idleCompound = args.idle || null;
+    let editCompound = args.edit || null;
     
     function showIdle() {
         idleSlot.style.display = 'flex';
@@ -87,12 +87,12 @@ const info = {
     name: 'EditToggle',
     description: 'Toggles between idle and edit compounds',
     scheme: {
-        idleCompound: {
+        idle: {
             as: 'function', 
             on: 'function',
             uid: 'string'
         },
-        editCompound: {
+        edit: {
             as: 'function', 
             on: 'function',
             uid: 'string'

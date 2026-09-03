@@ -93,6 +93,10 @@ class Model {
         }
         return table;
     }
+
+    getTableNames() {
+        
+    }
     
     // === Serialization ===
     toJSON() {

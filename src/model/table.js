@@ -64,6 +64,19 @@ class Table {
     }
     
     // === Column operations ===
+    getColumn(colId) {
+        const col = this.columns.find((col) => col.colId === colId);
+        if (!col) {
+            console.log("Column not found.", colId);
+            return;
+        };
+        return { ...col }; // copy
+    }
+
+    getColumns() {
+        return this.columns.map(col => col); // copy
+    }
+
     addColumn({name, type, targetTableUuid = null, after = null, before = null}) {
         if (this.columns.find(col => col.name === name)) {
             console.error(`[Table ${this.name}] Column '${name}' already exists`);
@@ -189,6 +202,19 @@ class Table {
     }
     
     // === Row operations ===
+    getRow(rowIdx) {
+        if (rowIdx < 0 || rowIdx >= this.rows.length) {
+            console.error(`[Table ${this.name}] Row index ${rowIdx} out of bounds`);
+            return null;
+        }
+        return this.rows[rowIdx];
+    }
+
+    getRowData(rowIdx) {
+        const row = this.rows[rowIdx];
+        return row ? {...row.data} : null; // copy
+    }
+    
     addRow(rowData = {}) {
         const data = {};
         
@@ -232,6 +258,21 @@ class Table {
         return true;
     }
     
+    getCell(rowIdx, colId) {
+        const row = this.rows[rowIdx];
+        if (!row) {
+            console.error(`[Table ${this.name}] Row index ${rowIdx} out of bounds`);
+            return null;
+        }
+        
+        if (!(colId in row.data)) {
+            console.error(`[Table ${this.name}] Column '${colId}' not found`);
+            return null;
+        }
+        
+        return row.data[colId];
+    }
+    
     setCell(rowIdx, colId, value) {
         const row = this.rows[rowIdx];
         if (!row) {
@@ -265,29 +306,6 @@ class Table {
         });
         
         return true;
-    }
-    
-    getCell(rowIdx, colId) {
-        const row = this.rows[rowIdx];
-        if (!row) {
-            console.error(`[Table ${this.name}] Row index ${rowIdx} out of bounds`);
-            return null;
-        }
-        
-        if (!(colId in row.data)) {
-            console.error(`[Table ${this.name}] Column '${colId}' not found`);
-            return null;
-        }
-        
-        return row.data[colId];
-    }
-    
-    getRow(rowIdx) {
-        if (rowIdx < 0 || rowIdx >= this.rows.length) {
-            console.error(`[Table ${this.name}] Row index ${rowIdx} out of bounds`);
-            return null;
-        }
-        return this.rows[rowIdx];
     }
     
     // === Serialization ===

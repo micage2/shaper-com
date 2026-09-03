@@ -6,9 +6,9 @@ function ctor(args = {}) {
     const host = document.createElement('div');
     host.style.cssText = 'display:flex !important; flex-direction:column !important; width:100% !important; height:100% !important; overflow-y:auto !important; overflow-x:hidden !important; box-sizing:border-box !important;';
     
-    const fields = new Map();
+    const fields = new Map(); // string -> HTMLElement (prop field)
     
-    function createField(name) {
+    function createField(name, cell) {
         const field = document.createElement('div');
         field.style.cssText = 'display:flex; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;';
         
@@ -21,7 +21,7 @@ function ctor(args = {}) {
         valueContainer.style.cssText = 'flex:1;';
         field.appendChild(valueContainer);
         
-        fields.set(name, field);
+        fields.set(name, {field, cell});
         host.appendChild(field);
         
         return valueContainer;
@@ -39,88 +39,51 @@ function ctor(args = {}) {
     };
 }
 
+const typeIds = [1, 2, 3, 42];
+const typeStrings = ['string', 'number', 'boolean', 'link'];
+const input_types = ['text', 'number', 'checkbox', ''];
+
 const IPropertyView = (instance) => ({
-    addNumber(name, value) {
-        const container = instance.createField(name);
-        const input = document.createElement('input');
-        input.type = 'number';
-        input.value = value !== null && value !== undefined ? String(value) : '';
-        input.addEventListener('blur', () => {
-            this.emit('value-changed', { name, value: Number(input.value) });
-        });
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                input.blur();
-            }
-        });
-        container.appendChild(input);
-        return this;
-    },
-    
-    addString(name, value) {
-        const container = instance.createField(name);
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = value !== null && value !== undefined ? String(value) : '';
-        input.addEventListener('blur', () => {
-            this.emit('value-changed', { name, value: input.value });
-        });
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                input.blur();
-            }
-        });
-        container.appendChild(input);
-        return this;
-    },
-    
-    addBoolean(name, value) {
-        const container = instance.createField(name);
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = value || false;
-        checkbox.addEventListener('change', () => {
-            this.emit('value-changed', { name, value: checkbox.checked });
-        });
-        container.appendChild(checkbox);
-        return this;
-    },
-    
-    addLink(name, options, value) {
-        const container = instance.createField(name);
-        const select = document.createElement('select');
-        
-        const emptyOption = document.createElement('option');
-        emptyOption.value = '';
-        emptyOption.textContent = '';
-        select.appendChild(emptyOption);
-        
-        for (const option of options || []) {
-            const opt = document.createElement('option');
-            opt.value = String(option.idx);
-            opt.textContent = option.name;
-            select.appendChild(opt);
+    addProperty(prop) {
+        const typeIndex = typeIds.indexOf(prop.type);
+        if (typeIndex < 0) {
+            console.warn('Invalid datatype', prop.type);
+            return null;
         }
-        
-        if (value !== null && value !== undefined) {
-            select.value = String(value);
+        const container = instance.createField(prop.name, prop);
+        let child;
+        if (prop.type !== 42) {
+            child = document.createElement('input');
+            child.type = input_types[typeIndex];
+            child.value = prop.value;
+            child.checked = prop.type === 3 ? prop.value : '';
         }
-        
-        select.addEventListener('change', () => {
-            const newValue = select.value === '' ? null : Number(select.value);
-            this.emit('value-changed', { name, value: newValue });
+        else {
+            child = document.createElement('select');
+            for (const option of prop.options || []) {
+                const opt = document.createElement('option');
+                opt.value = String(option.idx);
+                opt.textContent = option.name;
+                child.appendChild(opt);
+            }
+            child.value = String(prop.value);
+        }
+        child.addEventListener('blur', () => {
+            if (prop.type === 1) prop.value = child.value;
+            else if (prop.type === 2) prop.value = Number(child.value);
+            else if (prop.type === 3) prop.value = child.checked || false;
+            else if (prop.type === 42) prop.value = Number(child.value);
+            this.emit('value-changed', prop);
         });
         
-        container.appendChild(select);
-        return this;
+        container.appendChild(child);
+        return this;                
     },
-    
+
     remove(name) {
-        const field = instance.fields.get(name);
-        if (field) {
-            field.remove();
+        const entry = instance.fields.get(name);
+        if (entry.field) {
+            entry.field.remove();
             instance.fields.delete(name);
         }
         return this;

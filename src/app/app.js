@@ -12,13 +12,13 @@ import TBS from '../dom-comps/top-bottom-static.js';
 import ETBT from '../compounds/edit-toggle-box-test.js';
 import GVT from '../compounds/grid-view-test.js';
 import GridToolbarTest from '../compounds/grid-toolbar-test.js';
-import ModelView from '../compounds/model-view-test.js';
 import TreeViewTest from '../compounds/tree-view-test.js';
-import ModelTreeTest from '../compounds/model-tree-test.js';
 import ListViewTest from '../compounds/list-view-test.js';
 import LayoutTest from '../compounds/layout-test.js';
 import PropertyViewTest from '../compounds/property-view-test.js';
 import EditToggleNew from '../compounds/edit-toggle-box-new-test.js';
+import ModelTreeTest from '../compounds/model-tree-test.js';
+import ModelViewTest from '../compounds/model-view-test.js';
 import ModelTreeEditor from '../compounds/model-tree-editor-3.js';
 
 const $$ = DOM.create;
@@ -30,6 +30,7 @@ const Simple = (title) => $$(SimpleView, { title });
 // const model = Model.fromJSON(testData);
 const testData = await LoadFile('./data/test-data-03.json');
 const model = testData ? Model.fromJSON(testData) : new Model();
+window.mmm = model; // debugging only
 
 // compound switcher
 const tabView = $$(TabView);
@@ -51,10 +52,10 @@ const tbs = () => $$(TBS, {
 
 tabView
     .add('ModelTreeEditor', ModelTreeEditor(model), { icon: '📋' })
-    .add('EditToggleNew - Test', EditToggleNew(), { icon: '🌼' })
+    // .add('EditToggleNew - Test', EditToggleNew(), { icon: '🌼' })
     .add('TreeView', TreeViewTest(model), { icon: '🌳' })
     // .add('ModelTreeTest', mtt, { icon: '🌼' })
-    // .add('ModelView', ModelView(model, true), {})
+    .add('ModelTableEditor', ModelViewTest(model, true), {})
     // .add('Tab 3', tbs(), { icon: '⌛' })
     // .add('Tab 4', tbs(), { icon: '🌼' })
     // .add('ListViewTest', lvt, { icon: '📋' })
@@ -62,4 +63,3 @@ tabView
 
 DOM.mount(tabView);
 
-window.mmm = model;
