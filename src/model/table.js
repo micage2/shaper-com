@@ -1,3 +1,5 @@
+// File: src/model/table.js
+
 import { Column } from './column.js';
 import { Row } from './row.js';
 
@@ -9,7 +11,6 @@ class Table {
         this.rows = [];
         this.nextRowId = 0;
         this.eventHandlers = new Map();
-        this.cellSubscribers = new Map(); // cellIndex -> Set of callbacks
     }
     
     // === Events ===
@@ -34,49 +35,12 @@ class Table {
         }
     }
     
-    // === Cell subscriptions ===
-    onCellChanged(rowIdx, colId, callback) {
-        const colIdx = this.columns.findIndex(col => col.colId === colId);
-        if (colIdx === -1) {
-            console.error(`[Table ${this.name}] Column '${colId}' not found`);
-            return false;
-        }
-        
-        const cellIndex = rowIdx * this.columns.length + colIdx;
-        
-        if (!this.cellSubscribers.has(cellIndex)) {
-            this.cellSubscribers.set(cellIndex, new Set());
-        }
-        this.cellSubscribers.get(cellIndex).add(callback);
-        return true;
-    }
-    
-    offCellChanged(rowIdx, colId, callback) {
-        const colIdx = this.columns.findIndex(col => col.colId === colId);
-        if (colIdx === -1) return false;
-        
-        const cellIndex = rowIdx * this.columns.length + colIdx;
-        const subscribers = this.cellSubscribers.get(cellIndex);
-        if (subscribers) {
-            subscribers.delete(callback);
-        }
-        return true;
+    // === Helper: find row index by id ===
+    findRowIndex(rowId) {
+        return this.rows.findIndex(row => row.id === rowId);
     }
     
     // === Column operations ===
-    getColumn(colId) {
-        const col = this.columns.find((col) => col.colId === colId);
-        if (!col) {
-            console.log("Column not found.", colId);
-            return;
-        };
-        return { ...col }; // copy
-    }
-
-    getColumns() {
-        return this.columns.map(col => col); // copy
-    }
-
     addColumn({name, type, targetTableUuid = null, after = null, before = null}) {
         if (this.columns.find(col => col.name === name)) {
             console.error(`[Table ${this.name}] Column '${name}' already exists`);
@@ -202,19 +166,6 @@ class Table {
     }
     
     // === Row operations ===
-    getRow(rowIdx) {
-        if (rowIdx < 0 || rowIdx >= this.rows.length) {
-            console.error(`[Table ${this.name}] Row index ${rowIdx} out of bounds`);
-            return null;
-        }
-        return this.rows[rowIdx];
-    }
-
-    getRowData(rowIdx) {
-        const row = this.rows[rowIdx];
-        return row ? {...row.data} : null; // copy
-    }
-    
     addRow(rowData = {}) {
         const data = {};
         
@@ -222,7 +173,6 @@ class Table {
             data[column.colId] = column.defaultValue;
         }
         
-        // Also accept data by column name for convenience
         for (const [key, value] of Object.entries(rowData)) {
             const column = this.columns.find(col => col.colId === key || col.name === key);
             if (column) {
@@ -241,9 +191,10 @@ class Table {
         return row;
     }
     
-    deleteRow(rowIdx) {
-        if (rowIdx < 0 || rowIdx >= this.rows.length) {
-            console.error(`[Table ${this.name}] Row index ${rowIdx} out of bounds`);
+    deleteRow(rowId) {
+        const rowIdx = this.findRowIndex(rowId);
+        if (rowIdx === -1) {
+            console.error(`[Table ${this.name}] Row with id '${rowId}' not found`);
             return false;
         }
         
@@ -254,35 +205,31 @@ class Table {
             rowId: row.id,
             rowIdx: rowIdx
         });
-
-        if (this.rows.length === 0) {
-            this.addRow({});
-        }
         
         return true;
     }
     
-    getCell(rowIdx, colId) {
-        const row = this.rows[rowIdx];
-        if (!row) {
-            console.error(`[Table ${this.name}] Row index ${rowIdx} out of bounds`);
+    getRow(rowId) {
+        const rowIdx = this.findRowIndex(rowId);
+        if (rowIdx === -1) {
+            console.error(`[Table ${this.name}] Row with id '${rowId}' not found`);
             return null;
         }
-        
-        if (!(colId in row.data)) {
-            console.error(`[Table ${this.name}] Column '${colId}' not found`);
-            return null;
-        }
-        
-        return row.data[colId];
+        return this.rows[rowIdx];
     }
     
-    setCell(rowIdx, colId, value) {
-        const row = this.rows[rowIdx];
-        if (!row) {
-            console.error(`[Table ${this.name}] Row index ${rowIdx} out of bounds`);
+    getRowIndex(rowId) {
+        return this.findRowIndex(rowId);
+    }
+    
+    setCell(rowId, colId, value) {
+        const rowIdx = this.findRowIndex(rowId);
+        if (rowIdx === -1) {
+            console.error(`[Table ${this.name}] Row with id '${rowId}' not found`);
             return false;
         }
+        
+        const row = this.rows[rowIdx];
         
         if (!(colId in row.data)) {
             console.error(`[Table ${this.name}] Column '${colId}' not found`);
@@ -292,14 +239,7 @@ class Table {
         const oldValue = row.data[colId];
         row.data[colId] = value;
         
-        const colIdx = this.columns.findIndex(col => col.colId === colId);
-        const cellIndex = rowIdx * this.columns.length + colIdx;
-        const subscribers = this.cellSubscribers.get(cellIndex);
-        if (subscribers) {
-            subscribers.forEach(cb => cb(value));
-        }
-        
-        const column = this.columns[colIdx];
+        const column = this.columns.find(col => col.colId === colId);
         this.emit('cell.changed', {
             rowId: row.id,
             rowIdx: rowIdx,
@@ -310,6 +250,23 @@ class Table {
         });
         
         return true;
+    }
+    
+    getCell(rowId, colId) {
+        const rowIdx = this.findRowIndex(rowId);
+        if (rowIdx === -1) {
+            console.error(`[Table ${this.name}] Row with id '${rowId}' not found`);
+            return null;
+        }
+        
+        const row = this.rows[rowIdx];
+        
+        if (!(colId in row.data)) {
+            console.error(`[Table ${this.name}] Column '${colId}' not found`);
+            return null;
+        }
+        
+        return row.data[colId];
     }
     
     // === Serialization ===

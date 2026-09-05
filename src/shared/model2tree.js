@@ -5,9 +5,9 @@ function createTreeInterface(model, config = {}) {
         return tableIcons[tableName] || '📄';
     }
     
-    function getRowLabel(table, rowIdx) {
-        const row = table.rows[rowIdx];
-        if (!row) return `Row ${rowIdx}`;
+    function getRowLabel(table, rowId) {
+        const row = table.getRow(rowId);
+        if (!row) return `Row ${rowId}`;
         
         const nameColumn = table.columns.find(col => col.name === 'name');
         if (nameColumn && row.data[nameColumn.colId]) {
@@ -19,21 +19,20 @@ function createTreeInterface(model, config = {}) {
             return row.data[stringColumn.colId];
         }
         
-        return `Row ${rowIdx}`;
+        return `Row ${rowId}`;
     }
     
-    function findChildren(tableUuid, rowIdx) {
+    function findChildren(tableUuid, parentRowId) {
         const children = [];
         
         for (const otherTable of model.tables.values()) {
             for (const column of otherTable.columns) {
                 if (column.type === 42 && column.targetTableUuid === tableUuid) {
-                    for (let i = 0; i < otherTable.rows.length; i++) {
-                        const row = otherTable.rows[i];
-                        if (row.data[column.colId] === rowIdx) {
+                    for (const row of otherTable.rows) {
+                        if (row.data[column.colId] === parentRowId) {
                             children.push({
                                 tableUuid: otherTable.uuid,
-                                rowIdx: i
+                                rowId: row.id
                             });
                         }
                     }
@@ -51,27 +50,27 @@ function createTreeInterface(model, config = {}) {
         const rootNodes = [];
         let firstRoot = null;
         
-        for (let rootIdx = 0; rootIdx < table.rows.length; rootIdx++) {
+        for (const row of table.rows) {
             const visited = new Set();
             const stack = [{
                 tableUuid: rootTableUuid,
-                rowIdx: rootIdx,
+                rowId: row.id,
                 parentNode: null
             }];
             
             while (stack.length > 0) {
-                const { tableUuid, rowIdx, parentNode } = stack.pop();
-                const key = `${tableUuid}:${rowIdx}`;
+                const { tableUuid, rowId, parentNode } = stack.pop();
+                const key = `${tableUuid}:${rowId}`;
                 
                 if (visited.has(key)) continue;
                 visited.add(key);
                 
                 const currentTable = model.getTable(tableUuid);
                 const node = {
-                    label: getRowLabel(currentTable, rowIdx),
+                    label: getRowLabel(currentTable, rowId),
                     icon: getIcon(currentTable.name),
                     type: 'folder',
-                    data: { tableUuid, rowId: rowIdx },
+                    data: { tableUuid, rowId },
                     children: []
                 };
                 
@@ -82,11 +81,11 @@ function createTreeInterface(model, config = {}) {
                     if (!firstRoot) firstRoot = node;
                 }
                 
-                const childRefs = findChildren(tableUuid, rowIdx);
+                const childRefs = findChildren(tableUuid, rowId);
                 for (let i = childRefs.length - 1; i >= 0; i--) {
                     stack.push({
                         tableUuid: childRefs[i].tableUuid,
-                        rowIdx: childRefs[i].rowIdx,
+                        rowId: childRefs[i].rowId,
                         parentNode: node
                     });
                 }
@@ -96,16 +95,16 @@ function createTreeInterface(model, config = {}) {
         return { tree: rootNodes, firstRoot };
     }
     
-    function getChildren(tableUuid, rowIdx) {
-        const childRefs = findChildren(tableUuid, rowIdx);
+    function getChildren(tableUuid, rowId) {
+        const childRefs = findChildren(tableUuid, rowId);
         
         return childRefs.map(ref => {
             const otherTable = model.getTable(ref.tableUuid);
             return {
-                label: getRowLabel(otherTable, ref.rowIdx),
+                label: getRowLabel(otherTable, ref.rowId),
                 icon: getIcon(otherTable.name),
                 type: 'folder',
-                data: { tableUuid: ref.tableUuid, rowId: ref.rowIdx }
+                data: { tableUuid: ref.tableUuid, rowId: ref.rowId }
             };
         });
     }

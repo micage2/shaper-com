@@ -428,8 +428,6 @@ function buildProps(model, tableUuid, rowId) {
     const table = model.getTable(tableUuid);
     if (!table) return propView;
     
-    const rowIdx = table.rows.findIndex(row => row.id === rowId);
-    
     table.on('column.added', function(data) {
         const prop = { name: data.columnName, type: data.type, value: '' };
         if (data.type === 42) {
@@ -441,10 +439,12 @@ function buildProps(model, tableUuid, rowId) {
     table.on('column.removed', function(data) {
         propView.remove(data.columnName);
     });
+
+    const row = rowId !== null && rowId !== undefined ? table.getRow(rowId) : null;
     
     table.columns.forEach(col => {
-        const value = rowIdx >= 0 ? table.getCell(rowIdx, col.colId) : '';
-        
+        const value = row ? row.data[col.colId] : '';
+    
         const prop = {
             name: col.name,
             type: col.type,
@@ -453,9 +453,9 @@ function buildProps(model, tableUuid, rowId) {
         
         if (col.type === 42) {
             const targetTable = model.getTable(col.targetTableUuid);
-            prop.options = targetTable ? targetTable.rows.map((row, idx) => ({
-                idx: idx,
-                name: row.data[targetTable.columns[0]?.colId] || `Row ${idx}`
+            prop.options = targetTable ? targetTable.rows.map((row, i) => ({
+                idx: row.id,
+                name: row.data[targetTable.columns[0]?.colId] || `Row ${i}`
             })) : [];
         }
         

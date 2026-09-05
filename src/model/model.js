@@ -1,3 +1,5 @@
+// File: src/model/model.js
+
 import { Table } from './table.js';
 
 class Model {
@@ -39,8 +41,8 @@ class Model {
     createTable(name) {
         const uuid = this.generateUuid();
         const table = new Table(uuid, name);
-        this.tables.set(uuid, table);
         table.addRow({});  // dummy row
+        this.tables.set(uuid, table);
         
         this.emit('table.created', {
             uuid: uuid,
@@ -93,10 +95,6 @@ class Model {
             return null;
         }
         return table;
-    }
-
-    getTableNames() {
-        
     }
     
     // === Serialization ===
