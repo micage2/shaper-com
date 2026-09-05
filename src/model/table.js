@@ -254,6 +254,10 @@ class Table {
             rowId: row.id,
             rowIdx: rowIdx
         });
+
+        if (this.rows.length === 0) {
+            this.addRow({});
+        }
         
         return true;
     }

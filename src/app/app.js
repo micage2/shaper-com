@@ -19,15 +19,12 @@ import PropertyViewTest from '../compounds/property-view-test.js';
 import EditToggleNew from '../compounds/edit-toggle-box-new-test.js';
 import ModelTreeTest from '../compounds/model-tree-test.js';
 import ModelViewTest from '../compounds/model-view-test.js';
-import ModelTreeEditor from '../compounds/model-tree-editor-3.js';
+import ModelTreeEditor from '../compounds/model-tree-editor-5.js';
 
 const $$ = DOM.create;
 const Simple = (title) => $$(SimpleView, { title });
 
 // Load test data
-// const response = await fetch('./data/test-data-03.json');
-// const testData = await response.json();
-// const model = Model.fromJSON(testData);
 const testData = await LoadFile('./data/test-data-03.json');
 const model = testData ? Model.fromJSON(testData) : new Model();
 window.mmm = model; // debugging only
@@ -35,31 +32,19 @@ window.mmm = model; // debugging only
 // compound switcher
 const tabView = $$(TabView);
 
-// const etbt = ETBT();
-// const gvt = GVT(model);
-// const gtt = GridToolbarTest();
-// const mtt = ModelTreeTest(model, true); // layoutTest = true
-// const lvt = ListViewTest();
-// const pvt = PropertyViewTest();
-// const mte = ModelTreeEditor(model);
-
 // test compound factory for tabs
-const tbs = () => $$(TBS, {
+const tbs = (title) => $$(TBS, {
     topHeight: 32, 
     top: Simple('Top'),
-    bottom: Simple('Bottom'),
+    bottom: Simple(title),
 });
 
 tabView
     .add('ModelTreeEditor', ModelTreeEditor(model), { icon: '📋' })
-    // .add('EditToggleNew - Test', EditToggleNew(), { icon: '🌼' })
     .add('TreeView', TreeViewTest(model), { icon: '🌳' })
-    // .add('ModelTreeTest', mtt, { icon: '🌼' })
-    .add('ModelTableEditor', ModelViewTest(model, true), {})
-    // .add('Tab 3', tbs(), { icon: '⌛' })
-    // .add('Tab 4', tbs(), { icon: '🌼' })
-    // .add('ListViewTest', lvt, { icon: '📋' })
-    // .add('PropertyViewTest', pvt, { icon: '📋' })
+    // .add('ModelTableEditor', ModelViewTest(model, true), {})
+    .add('Tab 3', tbs('Nothing to see here.'), { icon: '⌛' })
+    .add('Tab 4', tbs('Nothing to see here either.'), { icon: '🌼' })
 
 DOM.mount(tabView);
 

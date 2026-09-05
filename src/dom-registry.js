@@ -245,12 +245,12 @@ function create(clsid, options = {}, ifaceName) {
         
         on(msg, cb) {
             if (!this.mediator) return null;
-            return this.mediator.on(msg, cb);
+            return this.mediator.on(msg, cb.bind(this));
         },
         
         once(msg, cb) {
             if (!this.mediator) return null;
-            return this.mediator.once(msg, cb);
+            return this.mediator.once(msg, cb.bind(this));
         }
     };
     

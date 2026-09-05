@@ -40,6 +40,7 @@ class Model {
         const uuid = this.generateUuid();
         const table = new Table(uuid, name);
         this.tables.set(uuid, table);
+        table.addRow({});  // dummy row
         
         this.emit('table.created', {
             uuid: uuid,

@@ -1,3 +1,4 @@
+// src/dom-comps/edit-toggle.js
 import { DomRegistry as DOM } from '../dom-registry.js';
 
 function ctor(args = {}) {
@@ -7,55 +8,94 @@ function ctor(args = {}) {
     host.style.cssText = 'display:inline-flex;align-items:center;gap:4px;';
     const shadow = host.attachShadow({ mode: 'closed' });
     
-    const idleButton = document.createElement('button');
-    idleButton.style.cssText = 'height: var(--control-height, 28px); padding: var(--control-padding, 4px 12px); border: var(--control-border, 1px solid #ccc); border-radius: var(--control-radius, 4px); font-size: var(--control-font-size, 12px); background:#fff; cursor:pointer; white-space:nowrap; font-family: Segoe UI, Arial, sans-serif;';
-    idleButton.textContent = args.idleLabel || 'Edit';
-    shadow.appendChild(idleButton);
+    const idleSlot = document.createElement('slot');
+    idleSlot.name = 'idle';
+    idleSlot.style.cssText = 'display:flex;align-items:center;gap:4px;';
+    shadow.appendChild(idleSlot);
     
     const editSlot = document.createElement('slot');
     editSlot.name = 'edit';
     editSlot.style.cssText = 'display:none;align-items:center;gap:4px;';
-    editSlot.style.display = 'none';
     shadow.appendChild(editSlot);
     
-    idleButton.addEventListener('click', () => showEdit() );
-    if (args.editCompound) args.editCompound.on('close', showIdle);
+    let idleCompound = args.idle || null;
+    let editCompound = args.edit || null;
+    
+    function showIdle() {
+        idleSlot.style.display = 'flex';
+        editSlot.style.display = 'none';
+        self.emit('idle', { toggle: self });
+    }
     
     function showEdit() {
-        idleButton.style.display = 'none';
+        idleSlot.style.display = 'none';
         editSlot.style.display = 'flex';
         self.emit('edit', { toggle: self });
     }
     
-    function showIdle() {
-        idleButton.style.display = '';
-        editSlot.style.display = 'none';
-        self.emit('idle', { toggle: self });
-    }    
-    
     return {
         getHost() { return host; },
-        getInstance() { return { self, editCompound: args.editCompound }; },
-        postCreate({self, editCompound}) {
-            if (editCompound)
-                DOM.attach(editCompound, self, { slot: 'edit' });
+        getInstance() { 
+            return { 
+                self, 
+                idleCompound, 
+                editCompound,
+                showIdle,
+                showEdit
+            }; 
+        },
+        postCreate(instance) {
+            if (instance.idleCompound) {
+                DOM.attach(instance.idleCompound, instance.self, { slot: 'idle' });
+                instance.idleCompound.on('close', instance.showEdit);
+            }
+            
+            if (instance.editCompound) {
+                DOM.attach(instance.editCompound, instance.self, { slot: 'edit' });
+                instance.editCompound.on('close', instance.showIdle);
+            }
         }
     };
 }
 
-const IEditToggle = (instance) => ({});
+const IEditToggle = (instance) => ({
+    setIdleCompound(compound) {
+        if (instance.idleCompound) {
+            DOM.detach(instance.idleCompound);
+            instance.idleCompound.on('close', instance.showEdit);
+        }
+        DOM.attach(compound, instance.self, { slot: 'idle' });
+        compound.on('close', instance.showEdit);
+        instance.idleCompound = compound;
+        return this;
+    },
+    
+    setEditCompound(compound) {
+        if (instance.editCompound) {
+            DOM.detach(instance.editCompound);
+            instance.editCompound.on('close', instance.showIdle);
+        }
+        DOM.attach(compound, instance.self, { slot: 'edit' });
+        compound.on('close', instance.showIdle);
+        instance.editCompound = compound;
+        return this;
+    }
+});
 
 const info = {
-    clsid: 'jscom.dom-comps.edit-toggle',
+    clsid: 'jscom.dom-comps.edit-toggle-2',
     name: 'EditToggle',
-    description: 'Button that toggles edit mode with a slot for custom edit UI',
+    description: 'Toggles between idle and edit compounds',
     scheme: {
-        idleLabel: 'string',
-        editCompound: {
+        idle: {
             as: 'function', 
             on: 'function',
-            uid: 'string',
-            ppp: { type: 'number', required: false } // a test
+            uid: 'string'
+        },
+        edit: {
+            as: 'function', 
+            on: 'function',
+            uid: 'string'
         }
     }
 };

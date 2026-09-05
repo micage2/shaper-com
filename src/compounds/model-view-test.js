@@ -114,12 +114,14 @@ function createModelView(model, layoutTest = false) {
                 }
             }
         });
+
+        // TODO: new signature: add(name, position = 'center', idle, edit = null)
         
         box
-            .add(tableSelect, 'left')
-            .add(addRowBtn, 'left')
-            .add(addColToggle, 'right')
-            .add(removeColToggle, 'right');
+        .add(tableSelect, 'left')
+        .add(addRowBtn, 'left')
+        .add(addColToggle, 'right')
+        .add(removeColToggle, 'right');
         
         const dialog = $$(TopBottomStatic, {
             topHeight: 40,

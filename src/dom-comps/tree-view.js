@@ -60,6 +60,8 @@ function ctor(args = {}) {
                 state.selectedItem.setSelected(false);
             }
             state.selectedItem = null;
+            if (!silent) 
+                self.emit('item-selected', null);
             return;
         }
         

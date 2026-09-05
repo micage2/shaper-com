@@ -39,7 +39,7 @@ function ctor(args = {}) {
     }
 
     host.addEventListener('change', () => {
-        self.emit('change', { value: host.value });
+        self.emit('changed', { value: host.value });
     });
 
     return {
