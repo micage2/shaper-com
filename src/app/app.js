@@ -10,7 +10,7 @@ import LR from '../dom-comps/left-right.js';
 import TB from '../dom-comps/top-bottom.js';
 import TBS from '../dom-comps/top-bottom-static.js';
 import ETBT from '../compounds/edit-toggle-box-test.js';
-import GVT from '../compounds/grid-view-test.js';
+import GridViewTest from '../compounds/grid-view-test.js';
 import GridToolbarTest from '../compounds/grid-toolbar-test.js';
 import TreeViewTest from '../compounds/tree-view-test.js';
 import ListViewTest from '../compounds/list-view-test.js';
@@ -20,6 +20,7 @@ import EditToggleNew from '../compounds/edit-toggle-box-new-test.js';
 import ModelTreeTest from '../compounds/model-tree-test.js';
 import ModelViewTest from '../compounds/model-view-test.js';
 import ModelTreeEditor from '../compounds/model-tree-editor-5.js';
+import FocusTest from '../compounds/focus-test.js';
 
 const $$ = DOM.create;
 const Simple = (title) => $$(SimpleView, { title });
@@ -41,10 +42,13 @@ const tbs = (title) => $$(TBS, {
 
 tabView
     .add('ModelTreeEditor', ModelTreeEditor(model), { icon: '📋' })
-    .add('TreeView', TreeViewTest(model), { icon: '🌳' })
+    .add('Tree', TreeViewTest(model), { icon: '🌳' })
     // .add('ModelTableEditor', ModelViewTest(model, true), {})
     .add('Tab 3', tbs('Nothing to see here.'), { icon: '⌛' })
     .add('Tab 4', tbs('Nothing to see here either.'), { icon: '🌼' })
+    .add('Tab 5', tbs('Have a break.'), { icon: '☕' })
+    // .add('FocusTest', FocusTest('Have a break.'), { icon: '☕' })
+    .add('Grid', GridViewTest(model), { icon: '☕' })
 
 DOM.mount(tabView);
 

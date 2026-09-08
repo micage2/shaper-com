@@ -16,7 +16,7 @@ function createTreeViewTest(layoutTest = false) {
     const toolbar = $$(Toolbar);
     
     const addFolderBtn = $$(Button, { label: '+ Folder' });
-    addFolderBtn.on('click', () => {
+    addFolderBtn.on('clicked', () => {
         treeView.add({
             label: 'New Folder',
             icon: '📁',
@@ -25,14 +25,14 @@ function createTreeViewTest(layoutTest = false) {
     });
     
     const addLeafBtn = $$(Button, { label: '+ File' });
-    addLeafBtn.on('click', () => treeView.add({
+    addLeafBtn.on('clicked', () => treeView.add({
         label: 'New Leaf',
         icon: '📄',
         type: 'leaf'
     }));
     
     const deleteBtn = $$(Button, { label: '🗑' });
-    deleteBtn.on('click', () => {
+    deleteBtn.on('clicked', () => {
         const selected = treeView.getSelected();
         if (selected) {
             treeView.remove(selected);

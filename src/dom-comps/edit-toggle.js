@@ -79,7 +79,12 @@ const IEditToggle = (instance) => ({
         compound.on('close', instance.showIdle);
         instance.editCompound = compound;
         return this;
-    }
+    },
+
+    showIdle() {
+        instance.showIdle();
+        return this;
+    }    
 });
 
 const info = {

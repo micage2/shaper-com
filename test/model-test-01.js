@@ -226,11 +226,11 @@ test('Event emission', () => {
     const { model, iModel } = createTestModel();
     
     const events = [];
-    iModel.on('table.created', (data) => {
+    iModel.on('table-created', (data) => {
         events.push({event: 'table.created', name: data.name});
     });
     
-    iModel.on('row.added', (data) => {
+    iModel.on('row-added', (data) => {
         events.push({event: 'row.added', tableUuid: data.tableUuid});
     });
     

@@ -176,15 +176,15 @@ test('Test 7b: Table events', () => {
     
     const events = [];
     
-    cityTable.on('column.added', (data) => {
+    cityTable.on('column-added', (data) => {
         events.push({ event: 'column.added', ...data });
     });
     
-    cityTable.on('row.added', (data) => {
+    cityTable.on('row-added', (data) => {
         events.push({ event: 'row.added', ...data });
     });
     
-    cityTable.on('cell.changed', (data) => {
+    cityTable.on('cell-changed', (data) => {
         events.push({ event: 'cell.changed', ...data });
     });
     

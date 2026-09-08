@@ -1,149 +1,57 @@
 import { DomRegistry as DOM } from '../dom-registry.js';
 import GridView from '../dom-comps/grid-view.js';
-import EditToggle from '../dom-comps/edit-toggle.js';
-import EditToggleBox from '../dom-comps/edit-toggle-box.js';
-import Button from '../dom-comps/button.js';
 import SelectBox from '../dom-comps/select-box.js';
-import TopBottomStatic from '../dom-comps/top-bottom-static.js';
-import { createGridInterface } from '../shared/model2grid.js';
+import Toolbar from '../dom-comps/toolbar.js';
+import TBS from '../dom-comps/top-bottom-static.js';
 
-const $$ = DOM.create;
-
-function createGridViewTest(model) {
-    const tableEntries = Array.from(model.tables.values());
-    let currentTable = tableEntries.find(t => t.name === 'City');
-    
-    let gridIface = createGridInterface(model, currentTable.uuid);
-    gridIface.getCellHeight = () => 28;
-    
-    let gridView = $$(GridView, gridIface);
-    
-    gridView
-        .addDeleteColumn()
-        .addIndexColumn();
-    
-    for (const column of gridIface.getColumns()) {
-        gridView.addColumn(column);
+function GridViewTest(model) {
+    if (!model) {
+        console.error('[GridViewTest] Model is required');
+        return null;
     }
     
-    const box = $$(EditToggleBox);
+    const mainTBS = DOM.create(TBS, { topHeight: 40 });
+    const mainToolbar = DOM.create(Toolbar, {});
     
-    const addRowBtn = $$(Button, {
-        label: '+ Row',
-        onClick: () => {
-            gridIface.addRow();
+    // Table selector
+    const tableOptions = Array.from(model.tables.values()).map(t => ({
+        value: t.uuid,
+        label: t.name
+    }));
+    
+    const tableSelect = DOM.create(SelectBox, { options: tableOptions });
+    
+    let currentGridView = null;
+    
+    function showTable(tableUuid) {
+        if (!tableUuid) return;
+        
+        const gridView = DOM.create(GridView, {
+            model: model,
+            tableUuid: tableUuid
+        });
+        
+        if (gridView) {
+            currentGridView = gridView;
+            mainTBS.setBottom(gridView);
         }
+    }
+    
+    tableSelect.on('changed', function(msg) {
+        showTable(msg.value);
     });
     
-    const addColToggle = $$(EditToggle, {
-        idleLabel: '+ Column',
-        editLabel: 'Add Column',
-        editChildren: [
-            { type: 'input', name: 'name', placeholder: 'column name' },
-            { 
-                type: 'select', 
-                name: 'type',
-                options: [
-                    { value: '1', label: 'string' },
-                    { value: '2', label: 'number' },
-                    { value: '3', label: 'boolean' },
-                    { value: '42', label: 'link' }
-                ]
-            },
-            { 
-                type: 'select',
-                name: 'targetTable',
-                options: tableEntries.map(t => ({
-                    value: t.uuid,
-                    label: t.name
-                })),
-                visibleWhen: { field: 'type', value: '42' }
-            },
-            { type: 'button', label: 'Ok', action: 'ok' },
-            { type: 'button', label: 'Cancel', action: 'cancel' }
-        ],
-        onfinish: (confirmed, values) => {
-            if (confirmed) {
-                const spec = {
-                    name: values.name,
-                    type: Number(values.type)
-                };
-                
-                if (values.type === '42') {
-                    spec.targetTableUuid = values.targetTable;
-                }
-                
-                gridIface.addColumn(spec);
-            }
-        }
-    });
+    mainToolbar.add(tableSelect);
+    mainTBS.setTop(mainToolbar);
     
-    const removeColToggle = $$(EditToggle, {
-        idleLabel: '🗑',
-        idleClass: 'danger',
-        editLabel: 'Remove Column',
-        editChildren: [
-            { 
-                type: 'select',
-                name: 'column',
-                options: gridIface.getColumns().map(col => ({
-                    value: col.colId,
-                    label: col.name
-                }))
-            },
-            { type: 'button', label: 'Ok', action: 'ok' },
-            { type: 'button', label: 'Cancel', action: 'cancel' }
-        ],
-        onfinish: (confirmed, values) => {
-            if (confirmed) {
-                gridIface.removeColumn(values.column);
-            }
-        }
-    });
+    // Initial table
+    const tables = Array.from(model.tables.values());
+    if (tables.length > 0) {
+        tableSelect.setValue(tables[0].uuid);
+        showTable(tables[0].uuid);
+    }
     
-    let testComponent = null;
-    
-    const tableSelect = $$(SelectBox, {
-        options: tableEntries.map(t => ({ value: t.uuid, label: t.name })),
-        value: currentTable.uuid,
-        onChange: (uuid) => {
-            const table = tableEntries.find(t => t.uuid === uuid);
-            if (table && table.uuid !== currentTable.uuid) {
-                currentTable = table;
-                
-                DOM.detach(gridView);
-                
-                gridIface = createGridInterface(model, table.uuid);
-                gridIface.getCellHeight = () => 28;
-                
-                gridView = $$(GridView, gridIface);
-                
-                gridView
-                    .addDeleteColumn()
-                    .addIndexColumn();
-                
-                for (const column of gridIface.getColumns()) {
-                    gridView.addColumn(column);
-                }
-                
-                DOM.attach(gridView, testComponent, { slot: 'bottom' });
-            }
-        }
-    });
-    
-    box
-        .add(tableSelect, 'left')
-        .add(addRowBtn, 'center')
-        .add(addColToggle, 'right')
-        .add(removeColToggle, 'right');
-    
-    testComponent = $$(TopBottomStatic, {
-        topHeight: 40,
-        top: box,
-        bottom: gridView
-    });
-    
-    return testComponent;
+    return mainTBS;
 }
 
-export default createGridViewTest;
+export default GridViewTest;

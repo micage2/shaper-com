@@ -8,15 +8,17 @@ function createTreeInterface(model, config = {}) {
     function getRowLabel(table, rowId) {
         const row = table.getRow(rowId);
         if (!row) return `Row ${rowId}`;
-        
-        const nameColumn = table.columns.find(col => col.name === 'name');
-        if (nameColumn && row.data[nameColumn.colId]) {
-            return row.data[nameColumn.colId];
+
+        const nameColumn = table.forColumns((col) => col.name === 'name');
+        const name = row.data[nameColumn.colId];
+        if (nameColumn && name) {
+            return name;
         }
         
-        const stringColumn = table.columns.find(col => col.type === 1);
-        if (stringColumn && row.data[stringColumn.colId]) {
-            return row.data[stringColumn.colId];
+        const stringColumn = table.forColumns((col) => col.type === 1);
+        const str = row.data[stringColumn.colId];
+        if (stringColumn && str) {
+            return str;
         }
         
         return `Row ${rowId}`;
@@ -32,7 +34,7 @@ function createTreeInterface(model, config = {}) {
                         if (row.data[column.colId] === parentRowId) {
                             children.push({
                                 tableUuid: otherTable.uuid,
-                                rowId: row.id
+                                rowId: row.id,
                             });
                         }
                     }
@@ -50,7 +52,7 @@ function createTreeInterface(model, config = {}) {
         const rootNodes = [];
         let firstRoot = null;
         
-        for (const row of table.rows) {
+        table.forRows((row) => {
             const visited = new Set();
             const stack = [{
                 tableUuid: rootTableUuid,
@@ -90,7 +92,7 @@ function createTreeInterface(model, config = {}) {
                     });
                 }
             }
-        }
+        });
         
         return { tree: rootNodes, firstRoot };
     }

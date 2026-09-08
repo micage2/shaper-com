@@ -1,435 +1,215 @@
 import { DomRegistry as DOM } from '../dom-registry.js';
+import { loadFragment } from '../shared/dom-helper.js';
+import CellView from './cell-view.js';
 
-function ctor(iGridData) {
+const html_file = "./src/dom-comps/grid-view.html";
+const fragment = await loadFragment(html_file);
+
+function ctor(args = {}) {
     const self = this;
+    const model = args.model;
+    const tableUuid = args.tableUuid;
+    
+    const table = model.getTable(tableUuid);
+    if (!table) {
+        console.error('[GridView] Table not found');
+        return null;
+    }
     
     const host = document.createElement('div');
     const shadow = host.attachShadow({ mode: 'closed' });
-    
-    shadow.innerHTML = `
-        <style>
-            :host {
-                display: block;
-                width: 100%;
-                height: 100%;
-                overflow: auto;
-                font-family: 'Segoe UI', Arial, sans-serif;
-                font-size: 13px;
-                background: #fff;
-            }
-            .grid {
-                display: flex;
-                min-width: 100%;
-                width: max-content;
-            }
-            .column {
-                display: flex;
-                flex-direction: column;
-                flex-shrink: 0;
-                min-width: 120px;
-            }
-            .cell {
-                position: relative;
-                height: 28px;
-                min-height: 28px;
-                padding: 0 8px;
-                border-bottom: 1px solid #eee;
-                border-right: 1px solid #ddd;
-                white-space: nowrap;
-                overflow: hidden;
-                box-sizing: border-box;
-                display: flex;
-                align-items: center;
-            }
-            .cell-header {
-                background: #f5f5f5;
-                font-weight: bold;
-                border-bottom: 1px solid #ccc;
-            }
-            .cell:hover {
-                background: #fafafa;
-            }
-            .cell-idle {
-                display: flex;
-                align-items: center;
-                width: 100%;
-                height: 100%;
-                user-select: none;
-            }
-            .cell-edit {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                height: 100%;
-                display: none;
-            }
-            .cell-edit input[type="text"],
-            .cell-edit input[type="number"],
-            .cell-edit select {
-                width: 100%;
-                height: 100%;
-                border: 1px solid #4a90d9;
-                padding: 0 8px;
-                font: inherit;
-                box-sizing: border-box;
-                margin: 0;
-                background: #fff;
-            }
-            .cell-align-left {
-                justify-content: flex-start;
-            }
-            .cell-align-right {
-                justify-content: flex-end;
-            }
-            .cell-align-center {
-                justify-content: center;
-            }
-        </style>
-        <div class="grid"></div>
-    `;
+    const clone = fragment.cloneNode(true);
+    shadow.appendChild(clone);
     
     const grid = shadow.querySelector('.grid');
-    const columns = new Map();
+    const columnSlots = new Map();
+    const rowCells = new Map();
     
-    function createSimpleCell(value) {
+    function createSimpleCell(text, cssClass = '') {
         const cell = document.createElement('div');
-        cell.className = 'cell';
-        cell.textContent = value;
-        cell.style.userSelect = 'none';
+        cell.className = cssClass || 'cell-simple';
+        cell.textContent = text;
         return cell;
     }
     
-    function createCellView(cellData) {
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-        
-        const type = cellData.getType();
-        if (type === 2) {
-            cell.classList.add('cell-align-right');
-        } else if (type === 3) {
-            cell.classList.add('cell-align-center');
-        } else {
-            cell.classList.add('cell-align-left');
-        }
-        
-        const idleContainer = document.createElement('div');
-        idleContainer.className = 'cell-idle';
-        idleContainer.style.justifyContent = 'inherit';
-        cell.appendChild(idleContainer);
-        
-        const editContainer = document.createElement('div');
-        editContainer.className = 'cell-edit';
-        cell.appendChild(editContainer);
-        
-        function display() {
-            idleContainer.innerHTML = '';
-            editContainer.innerHTML = '';
-            editContainer.style.display = 'none';
-            idleContainer.style.display = 'flex';
-            
-            const value = cellData.getValue();
-            
-            if (cellData.getType() === 3) {
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.checked = value || false;
-                checkbox.addEventListener('change', () => {
-                    cellData.setValue(checkbox.checked);
-                });
-                idleContainer.appendChild(checkbox);
-            } else if (cellData.getType() === 42) {
-                const linkInfo = cellData.getLinkInfo();
-                if (linkInfo && value !== null && value !== undefined) {
-                    const option = linkInfo.find(opt => opt.idx === value);
-                    idleContainer.textContent = option ? option.name : `Invalid (${value})`;
-                } else {
-                    idleContainer.textContent = '';
-                }
-            } else {
-                idleContainer.textContent = value !== null && value !== undefined ? String(value) : '';
-            }
-        }
-        
-        function edit() {
-            idleContainer.style.display = 'none';
-            editContainer.style.display = 'flex';
-            
-            const type = cellData.getType();
-            const value = cellData.getValue();
-            
-            if (type === 42) {
-                const select = document.createElement('select');
-                const emptyOption = document.createElement('option');
-                emptyOption.value = '';
-                emptyOption.textContent = '';
-                select.appendChild(emptyOption);
-                
-                const linkInfo = cellData.getLinkInfo();
-                if (linkInfo) {
-                    for (const option of linkInfo) {
-                        const opt = document.createElement('option');
-                        opt.value = String(option.idx);
-                        opt.textContent = option.name;
-                        select.appendChild(opt);
-                    }
-                }
-                
-                if (value !== null && value !== undefined) {
-                    select.value = String(value);
-                }
-                
-                select.addEventListener('change', () => {
-                    const newValue = select.value === '' ? null : Number(select.value);
-                    cellData.setValue(newValue);
-                    display();
-                });
-                
-                select.addEventListener('blur', () => {
-                    display();
-                });
-                
-                editContainer.appendChild(select);
-                select.focus();
-            } else {
-                const input = document.createElement('input');
-                input.type = type === 2 ? 'number' : 'text';
-                input.value = value !== null && value !== undefined ? String(value) : '';
-                
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        const newValue = type === 2 ? Number(input.value) : input.value;
-                        cellData.setValue(newValue);
-                        display();
-                    } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        display();
-                    }
-                });
-                
-                input.addEventListener('blur', () => {
-                    const newValue = type === 2 ? Number(input.value) : input.value;
-                    cellData.setValue(newValue);
-                    display();
-                });
-                
-                editContainer.appendChild(input);
-                input.focus();
-                input.select();
-            }
-        }
-        
-        if (cellData.getType() !== 3 && cellData.getType() !== 99) {
-            idleContainer.addEventListener('dblclick', edit);
-        }
-        
-        cellData.onValueChanged(() => {
-            display();
-        });
-        
-        display();
-        return cell;
-    }
-    
-    function addDeleteColumn() {
-        const column = document.createElement('div');
-        column.className = 'column';
-        column.style.minWidth = '24px';
-        column.style.width = '24px';
-        
-        const header = createSimpleCell('x');
-        header.classList.add('cell-align-center');
-        column.appendChild(header);
-        
-        const rowCount = iGridData.getRowCount();
-        for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-            const cell = createDeleteCell(rowIdx);
-            column.appendChild(cell);
-        }
-        
-        grid.appendChild(column);
-        columns.set('delete', column);
-    }
-    
-    function addIndexColumn() {
-        const column = document.createElement('div');
-        column.className = 'column';
-        column.style.minWidth = '40px';
-        column.style.width = '40px';
-        
-        const header = createSimpleCell('#');
-        header.classList.add('cell-align-center');
-        column.appendChild(header);
-        
-        const rowCount = iGridData.getRowCount();
-        for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-            const cell = createSimpleCell(String(rowIdx));
-            cell.classList.add('cell-align-center');
-            column.appendChild(cell);
-        }
-        
-        grid.appendChild(column);
-        columns.set('index', column);
-    }
-    
-    function addColumn(columnData) {
-        const column = document.createElement('div');
-        column.className = 'column';
-        
-        const header = createSimpleCell(columnData.name);
-        header.classList.add('cell-header');
-        
-        if (columnData.type === 2) {
-            header.classList.add('cell-align-right');
-        } else if (columnData.type === 3) {
-            header.classList.add('cell-align-center');
-        } else {
-            header.classList.add('cell-align-left');
-        }
-        
-        column.appendChild(header);
-        
-        const rowCount = iGridData.getRowCount();
-        for (let rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-            const cellData = iGridData.getCellData(rowIdx, columnData.colId);
-            if (cellData) {
-                column.appendChild(createCellView(cellData));
-            }
-        }
-        
-        grid.appendChild(column);
-        columns.set(columnData.colId, column);
-    }
-    
-    function createDeleteCell(rowIdx) {
+    function createDeleteCell(rowId) {
         const cell = createSimpleCell('×');
-        cell.classList.add('cell-align-center');
         cell.style.cursor = 'pointer';
+        cell.style.justifyContent = 'center';
         cell.addEventListener('click', () => {
-            iGridData.deleteRow(rowIdx);
+            table.deleteRow(rowId);
         });
         return cell;
     }
-    
-    function removeColumn(colId) {
-        const columnDiv = columns.get(colId);
-        if (columnDiv) {
-            columnDiv.remove();
-            columns.delete(colId);
-        }
+
+    function buildAll() {
+        grid.innerHTML = '';
+        columnSlots.clear();
+        rowCells.clear();
+        
+        const deleteCol = document.createElement('div');
+        deleteCol.className = 'column';
+        deleteCol.style.minWidth = '24px';
+        deleteCol.style.width = '24px';
+        
+        const deleteHeader = createSimpleCell('×', 'cell-header');
+        deleteHeader.style.justifyContent = 'center';
+        deleteCol.appendChild(deleteHeader);
+        
+        table.forRows((row) => {
+            deleteCol.appendChild(createDeleteCell(row.id));
+        });
+        grid.appendChild(deleteCol);
+        
+        const indexCol = document.createElement('div');
+        indexCol.className = 'column';
+        indexCol.style.minWidth = '40px';
+        indexCol.style.width = '40px';
+        
+        const indexHeader = createSimpleCell('#', 'cell-header');
+        indexHeader.style.justifyContent = 'center';
+        indexCol.appendChild(indexHeader);
+        
+        let idx = 0;
+        table.forRows(() => {
+            const cell = createSimpleCell(String(idx++));
+            cell.style.justifyContent = 'center';
+            indexCol.appendChild(cell);
+        });
+        grid.appendChild(indexCol);
+        
+        table.forColumns((col) => {
+            const column = document.createElement('div');
+            column.className = 'column';
+            
+            const header = createSimpleCell(col.name, 'cell-header');
+            if (col.type === 2) header.style.justifyContent = 'flex-end';
+            else if (col.type === 3) header.style.justifyContent = 'center';
+            column.appendChild(header);
+            
+            const slot = document.createElement('slot');
+            slot.name = `col-${col.colId}`;
+            column.appendChild(slot);
+            
+            grid.appendChild(column);
+            columnSlots.set(col.colId, { column, slot });
+        });
     }
     
-    function addRow(rowIdx) {
-        const deleteColumn = columns.get('delete');
-        if (deleteColumn) {
-            deleteColumn.appendChild(createDeleteCell(rowIdx));
-        }
+    function addCell(iface, rowId, col) {
+        const cellView = DOM.create(CellView, {
+            type: col.type,
+            table: table,
+            model: model,
+            rowId: rowId,
+            colId: col.colId,
+            targetTableUuid: col.targetTableUuid || null
+        });
         
-        const indexColumn = columns.get('index');
-        if (indexColumn) {
-            const cell = createSimpleCell(String(rowIdx));
-            cell.classList.add('cell-align-center');
-            indexColumn.appendChild(cell);
-        }
-        
-        const cols = iGridData.getColumns();
-        for (const col of cols) {
-            const column = columns.get(col.colId);
-            if (column) {
-                const cellData = iGridData.getCellData(rowIdx, col.colId);
-                if (cellData) {
-                    column.appendChild(createCellView(cellData));
-                }
+        if (cellView) {
+            const entry = columnSlots.get(col.colId);
+            if (entry) {
+                DOM.attach(cellView, iface, { slot: entry.slot.name });
+                if (!rowCells.has(rowId)) rowCells.set(rowId, new Map());
+                rowCells.get(rowId).set(col.colId, cellView);
             }
         }
     }
     
-    function removeRow(rowIdx) {
-        for (const columnDiv of columns.values()) {
-            const cell = columnDiv.children[rowIdx + 1]; // +1 for header
-            if (cell) {
-                cell.remove();
-            }
+    function addAllCells(iface) {
+        table.forColumns((col) => {
+            table.forRows((row) => {
+                addCell(iface, row.id, col);
+            });
+        });
+    }
+    
+    table.on('row-added', (data) => {
+        const rowId = data.rowId;
+        
+        const deleteCol = grid.children[0];
+        if (deleteCol) {
+            deleteCol.appendChild(createDeleteCell(rowId));
         }
         
-        // Refresh index cells
-        const indexColumn = columns.get('index');
-        if (indexColumn) {
-            const cells = indexColumn.children;
-            for (let i = 1; i < cells.length; i++) {
-                cells[i].textContent = String(i - 1);
-            }
+        const indexCol = grid.children[1];
+        if (indexCol) {
+            indexCol.appendChild(createSimpleCell(String(indexCol.children.length - 1)));
         }
-    }
+        
+        table.forColumns((col) => {
+            addCell(self, rowId, col);
+        });
+    });
+    
+    table.on('row-deleted', (data) => {
+        const rowId = data.rowId;
+        
+        const cells = rowCells.get(rowId);
+        if (cells) {
+            for (const cellView of cells.values()) {
+                DOM.detach(cellView);
+            }
+            rowCells.delete(rowId);
+        }
+        
+        buildAll();
+    });
+    
+    table.on('column-added', (data) => {
+        const col = table.forColumns(c => c.colId === data.colId);
+        if (!col) return;
+        
+        const column = document.createElement('div');
+        column.className = 'column';
+        column.appendChild(createSimpleCell(col.name, 'cell-header'));
+        
+        const slot = document.createElement('slot');
+        slot.name = `col-${col.colId}`;
+        column.appendChild(slot);
+        
+        grid.appendChild(column);
+        columnSlots.set(col.colId, { column, slot });
+        
+        table.forRows((row) => {
+            addCell(self, row.id, col);
+        });
+    });
+    
+    table.on('column-removed', (data) => {
+        const entry = columnSlots.get(data.colId);
+        if (entry) {
+            entry.column.remove();
+            columnSlots.delete(data.colId);
+        }
+        
+        for (const cells of rowCells.values()) {
+            cells.delete(data.colId);
+        }
+    });
     
     return {
         getHost() { return host; },
         getInstance() { 
-            return { 
-                iGridData,
-                columns,
-                addDeleteColumn, 
-                addIndexColumn, 
-                addColumn,
-                removeColumn,
-                addRow,
-                removeRow
-            }; 
+            return { model, tableUuid, table }; 
+        },
+        postCreate() {
+            buildAll();
+            addAllCells(this);
         }
     };
 }
 
-const IGridView = (instance) => {
-    const iface = {
-        addDeleteColumn() {
-            instance.addDeleteColumn();
-            return this;
-        },
-        
-        addIndexColumn() {
-            instance.addIndexColumn();
-            return this;
-        },
-        
-        addColumn(column) {
-            instance.addColumn(column);
-            return this;
-        },
-        
-        removeColumn(colId) {
-            instance.removeColumn(colId);
-            return this;
-        }
-    };
-    
-    instance.iGridData.onRowAdded((data) => {
-        instance.addRow(data.rowIdx);
-    });
-    
-    instance.iGridData.onRowDeleted((data) => {
-        instance.removeRow(data.rowIdx);
-    });
-    
-    instance.iGridData.onColumnAdded((data) => {
-        const columns = instance.iGridData.getColumns();
-        const column = columns.find(col => col.colId === data.colId);
-        if (column) {
-            instance.addColumn(column);
-        }
-    });
-    
-    instance.iGridData.onColumnRemoved((data) => {
-        instance.removeColumn(data.colId);
-    });
-    
-    return iface;
-};
+const IGridView = (instance) => ({});
 
 const info = {
     clsid: 'jscom.dom-comps.grid-view',
     name: 'GridView',
-    description: 'Column-first table view'
+    description: 'Table editor with cell editing',
+    scheme: {
+        model: 'object',
+        tableUuid: 'string'
+    }
 };
 
 DOM.register(ctor, (role) => {

@@ -94,6 +94,16 @@ function ctor(args = {}) {
 }
 
 const ITreeView = (instance) => ({
+    find(predicate) {
+        return instance.state.items.find(predicate);
+    },
+
+    forEach(callback) {
+        for (const item of instance.state.items) {
+            callback(item, item.getData());
+        }
+    },
+
     add(itemData) {
         const selected = this.getSelected();
         if (selected && !selected.isFolder()) {
@@ -147,6 +157,78 @@ const ITreeView = (instance) => ({
         
         return item;
     },
+
+    move(item, newParent) {
+        const idx = instance.state.items.indexOf(item);
+        if (idx === -1) return this;
+        
+        const endIdx = instance.getSubtreeEndIndex(idx);
+        const blockSize = endIdx - idx + 1;
+        
+        // Calculate target index
+        let targetIdx;
+        if (newParent) {
+            const parentIdx = instance.state.items.indexOf(newParent);
+            if (parentIdx === -1) return this;
+            
+            // Cycle check: is newParent inside the moving block?
+            if (parentIdx >= idx && parentIdx <= endIdx) return this;
+            
+            targetIdx = instance.getSubtreeEndIndex(parentIdx) + 1;
+        } else {
+            targetIdx = 0;
+        }
+        
+        // Cycle check: is target inside the moving block?
+        if (targetIdx > idx && targetIdx <= endIdx + 1) return this;
+        
+        // Adjust target if after the block (since block will be removed)
+        if (targetIdx > endIdx) {
+            targetIdx -= blockSize;
+        }
+        
+        // Remove block from array
+        const block = instance.state.items.splice(idx, blockSize);
+        
+        // Adjust depth
+        const depthDelta = newParent ? newParent.getDepth() + 1 - block[0].getDepth() : -block[0].getDepth();
+        block.forEach(it => it.setDepth(it.getDepth() + depthDelta));
+        
+        // Detach block from DOM
+        block.forEach(it => DOM.detach(it));
+        
+        // Insert block into array at target
+        instance.state.items.splice(targetIdx, 0, ...block);
+        
+        // Re-attach block to DOM - chain attachments
+        let target = null;
+        if (targetIdx > 0) {
+            target = instance.state.items[targetIdx - 1];
+        }
+        
+        for (const it of block) {
+            if (target) {
+                DOM.attach(it, target, { mode: 'after' });
+            } else {
+                // Insert at beginning
+                if (targetIdx === 0 && instance.state.items.length > block.length) {
+                    const firstAfter = instance.state.items[block.length];
+                    DOM.attach(it, firstAfter, { mode: 'before' });
+                    target = firstAfter;
+                } else {
+                    DOM.attach(it, this);
+                }
+            }
+            target = it;
+        }
+        
+        // Expand new parent
+        if (newParent) {
+            newParent.setExpanded(true);
+        }
+        
+        return this;
+    },    
     
     remove(item) {
         const idx = instance.state.items.indexOf(item);
@@ -158,13 +240,13 @@ const ITreeView = (instance) => ({
             const it = instance.state.items[i];
             DOM.detach(it);
             instance.state.items.splice(i, 1);
+            
+            this.emit('item-deleted', it);
         }
         
         if (instance.state.selectedItem === item) {
             instance.state.selectedItem = null;
         }
-        
-        this.emit('item-deleted', item);
         
         return this;
     },
@@ -175,6 +257,41 @@ const ITreeView = (instance) => ({
 
     select(item, silent = false) {
         instance.selectItem(item, silent);
+    },
+
+    getParent(item) {
+        const idx = instance.state.items.indexOf(item);
+        if (idx === -1) return null;
+        const depth = item.getDepth();
+        for (let i = idx - 1; i >= 0; i--) {
+            if (instance.state.items[i].getDepth() < depth) {
+                return instance.state.items[i];
+            }
+        }
+        return null;
+    },
+    
+    getChildren(item) {
+        const idx = instance.state.items.indexOf(item);
+        if (idx === -1) return [];
+        const endIdx = instance.getSubtreeEndIndex(idx);
+        const children = [];
+        const depth = item.getDepth();
+        for (let i = idx + 1; i <= endIdx; i++) {
+            if (instance.state.items[i].getDepth() === depth + 1) {
+                children.push(instance.state.items[i]);
+            }
+        }
+        return children;
+    },
+    
+    getSiblings(item) {
+        const parent = this.getParent(item);
+        if (!parent) {
+            // Root level siblings
+            return instance.state.items.filter(it => it.getDepth() === 0);
+        }
+        return this.getChildren(parent);
     }
 });
 

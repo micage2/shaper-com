@@ -1,5 +1,3 @@
-// File: src/model/table.js
-
 import { Column } from './column.js';
 import { Row } from './row.js';
 
@@ -7,8 +5,8 @@ class Table {
     constructor(uuid, name) {
         this.uuid = uuid;
         this.name = name;
-        this.columns = [];
-        this.rows = [];
+        this.columns = new Map();  // colId -> Column
+        this.rows = new Map();      // rowId -> Row
         this.nextRowId = 0;
         this.eventHandlers = new Map();
     }
@@ -19,6 +17,7 @@ class Table {
             this.eventHandlers.set(event, new Set());
         }
         this.eventHandlers.get(event).add(handler);
+        return () => this.off(event, handler);
     }
     
     off(event, handler) {
@@ -35,16 +34,20 @@ class Table {
         }
     }
     
-    // === Helper: find row index by id ===
-    findRowIndex(rowId) {
-        return this.rows.findIndex(row => row.id === rowId);
-    }
-    
     // === Column operations ===
-    addColumn({name, type, targetTableUuid = null, after = null, before = null}) {
-        if (this.columns.find(col => col.name === name)) {
-            console.error(`[Table ${this.name}] Column '${name}' already exists`);
-            return false;
+    forColumns(predicate) {
+        for (const col of this.columns.values()) {
+            if (predicate(col, this)) return col;
+        }
+        return null;
+    }
+
+    addColumn({name, type, targetTableUuid = null}) {
+        for (const col of this.columns.values()) {
+            if (col.name === name) {
+                console.error(`[Table ${this.name}] Column '${name}' already exists`);
+                return false;
+            }
         }
         
         if (![1, 2, 3, 42].includes(type)) {
@@ -58,81 +61,61 @@ class Table {
         }
         
         const column = new Column(name, type, targetTableUuid);
+        this.columns.set(column.colId, column);
         
-        let insertIndex = this.columns.length;
-        
-        if (after) {
-            const afterIndex = this.columns.findIndex(col => col.colId === after || col.name === after);
-            if (afterIndex === -1) {
-                console.error(`[Table ${this.name}] Column '${after}' not found for 'after'`);
-                return false;
-            }
-            insertIndex = afterIndex + 1;
-        } else if (before) {
-            const beforeIndex = this.columns.findIndex(col => col.colId === before || col.name === before);
-            if (beforeIndex === -1) {
-                console.error(`[Table ${this.name}] Column '${before}' not found for 'before'`);
-                return false;
-            }
-            insertIndex = beforeIndex;
-        }
-        
-        this.columns.splice(insertIndex, 0, column);
-        
-        for (const row of this.rows) {
+        for (const row of this.rows.values()) {
             row.data[column.colId] = column.defaultValue;
         }
         
-        this.emit('column.added', {
+        this.emit('column-added', {
             colId: column.colId,
             columnName: column.name,
             type: column.type,
-            targetTableUuid: column.targetTableUuid,
-            index: insertIndex
+            targetTableUuid: column.targetTableUuid
         });
         
         return column;
     }
     
     removeColumn(colId) {
-        const index = this.columns.findIndex(col => col.colId === colId);
-        if (index === -1) {
+        const column = this.columns.get(colId);
+        if (!column) {
             console.error(`[Table ${this.name}] Column '${colId}' not found`);
             return false;
         }
         
-        const column = this.columns[index];
-        this.columns.splice(index, 1);
+        this.columns.delete(colId);
         
-        for (const row of this.rows) {
+        for (const row of this.rows.values()) {
             delete row.data[colId];
         }
         
-        this.emit('column.removed', {
+        this.emit('column-removed', {
             colId: colId,
-            columnName: column.name,
-            index: index
+            columnName: column.name
         });
         
         return true;
     }
     
     renameColumn(colId, newName) {
-        const column = this.columns.find(col => col.colId === colId);
+        const column = this.columns.get(colId);
         if (!column) {
             console.error(`[Table ${this.name}] Column '${colId}' not found`);
             return false;
         }
         
-        if (this.columns.find(col => col.name === newName)) {
-            console.error(`[Table ${this.name}] Column '${newName}' already exists`);
-            return false;
+        for (const col of this.columns.values()) {
+            if (col.name === newName) {
+                console.error(`[Table ${this.name}] Column '${newName}' already exists`);
+                return false;
+            }
         }
         
         const oldName = column.name;
         column.name = newName;
         
-        this.emit('column.renamed', {
+        this.emit('column-renamed', {
             colId: colId,
             oldName: oldName,
             newName: newName
@@ -142,22 +125,19 @@ class Table {
     }
     
     swapColumns(colId1, colId2) {
-        const index1 = this.columns.findIndex(col => col.colId === colId1);
-        if (index1 === -1) {
-            console.error(`[Table ${this.name}] Column '${colId1}' not found`);
+        if (!this.columns.has(colId1) || !this.columns.has(colId2)) {
             return false;
         }
         
-        const index2 = this.columns.findIndex(col => col.colId === colId2);
-        if (index2 === -1) {
-            console.error(`[Table ${this.name}] Column '${colId2}' not found`);
-            return false;
-        }
+        const entries = Array.from(this.columns.entries());
+        const idx1 = entries.findIndex(([id]) => id === colId1);
+        const idx2 = entries.findIndex(([id]) => id === colId2);
         
-        [this.columns[index1], this.columns[index2]] = 
-            [this.columns[index2], this.columns[index1]];
+        [entries[idx1], entries[idx2]] = [entries[idx2], entries[idx1]];
         
-        this.emit('column.swapped', {
+        this.columns = new Map(entries);
+        
+        this.emit('column-swapped', {
             colId1: colId1,
             colId2: colId2
         });
@@ -166,24 +146,32 @@ class Table {
     }
     
     // === Row operations ===
+    forRows(predicate) {
+        for (const row of this.rows.values()) {
+            if (predicate(row, this)) return row;
+        }
+        return null;
+    }
+
     addRow(rowData = {}) {
         const data = {};
         
-        for (const column of this.columns) {
+        for (const column of this.columns.values()) {
             data[column.colId] = column.defaultValue;
         }
         
         for (const [key, value] of Object.entries(rowData)) {
-            const column = this.columns.find(col => col.colId === key || col.name === key);
-            if (column) {
-                data[column.colId] = value;
+            for (const column of this.columns.values()) {
+                if (column.colId === key || column.name === key) {
+                    data[column.colId] = value;
+                }
             }
         }
         
         const row = new Row(this.nextRowId++, data);
-        this.rows.push(row);
+        this.rows.set(row.id, row);
         
-        this.emit('row.added', {
+        this.emit('row-added', {
             rowId: row.id,
             rowData: {...row.data}
         });
@@ -192,44 +180,33 @@ class Table {
     }
     
     deleteRow(rowId) {
-        const rowIdx = this.findRowIndex(rowId);
-        if (rowIdx === -1) {
-            console.error(`[Table ${this.name}] Row with id '${rowId}' not found`);
+        if (!this.rows.delete(rowId)) {
+            console.error(`[Table ${this.name}] Row '${rowId}' not found`);
             return false;
         }
         
-        const row = this.rows[rowIdx];
-        this.rows.splice(rowIdx, 1);
-        
-        this.emit('row.deleted', {
-            rowId: row.id,
-            rowIdx: rowIdx
+        this.emit('row-deleted', {
+            rowId: rowId
         });
         
         return true;
     }
     
     getRow(rowId) {
-        const rowIdx = this.findRowIndex(rowId);
-        if (rowIdx === -1) {
-            console.error(`[Table ${this.name}] Row with id '${rowId}' not found`);
+        const row = this.rows.get(rowId);
+        if (!row) {
+            console.error(`[Table ${this.name}] Row '${rowId}' not found`);
             return null;
         }
-        return this.rows[rowIdx];
-    }
-    
-    getRowIndex(rowId) {
-        return this.findRowIndex(rowId);
+        return row;
     }
     
     setCell(rowId, colId, value) {
-        const rowIdx = this.findRowIndex(rowId);
-        if (rowIdx === -1) {
-            console.error(`[Table ${this.name}] Row with id '${rowId}' not found`);
+        const row = this.rows.get(rowId);
+        if (!row) {
+            console.error(`[Table ${this.name}] Row '${rowId}' not found`);
             return false;
         }
-        
-        const row = this.rows[rowIdx];
         
         if (!(colId in row.data)) {
             console.error(`[Table ${this.name}] Column '${colId}' not found`);
@@ -239,10 +216,9 @@ class Table {
         const oldValue = row.data[colId];
         row.data[colId] = value;
         
-        const column = this.columns.find(col => col.colId === colId);
-        this.emit('cell.changed', {
-            rowId: row.id,
-            rowIdx: rowIdx,
+        const column = this.columns.get(colId);
+        this.emit('cell-changed', {
+            rowId: rowId,
             colId: colId,
             columnName: column ? column.name : '',
             oldValue: oldValue,
@@ -253,13 +229,11 @@ class Table {
     }
     
     getCell(rowId, colId) {
-        const rowIdx = this.findRowIndex(rowId);
-        if (rowIdx === -1) {
-            console.error(`[Table ${this.name}] Row with id '${rowId}' not found`);
+        const row = this.rows.get(rowId);
+        if (!row) {
+            console.error(`[Table ${this.name}] Row '${rowId}' not found`);
             return null;
         }
-        
-        const row = this.rows[rowIdx];
         
         if (!(colId in row.data)) {
             console.error(`[Table ${this.name}] Column '${colId}' not found`);
@@ -274,16 +248,29 @@ class Table {
         return {
             uuid: this.uuid,
             name: this.name,
-            columns: this.columns.map(col => col.toJSON()),
-            rows: this.rows.map(row => row.toJSON())
+            columns: Array.from(this.columns.values()).map(col => col.toJSON()),
+            rows: Array.from(this.rows.values()).map(row => row.toJSON())
         };
     }
     
     static fromJSON(data) {
         const table = new Table(data.uuid, data.name);
-        table.columns = data.columns.map(col => Column.fromJSON(col));
-        table.rows = data.rows.map(row => Row.fromJSON(row));
-        table.nextRowId = table.rows.length;
+        
+        for (const colData of data.columns) {
+            const column = Column.fromJSON(colData);
+            table.columns.set(column.colId, column);
+        }
+        
+        for (const rowData of data.rows) {
+            const row = Row.fromJSON(rowData);
+            table.rows.set(row.id, row);
+        }
+        
+        if (table.rows.size > 0) {
+            const maxId = Math.max(...Array.from(table.rows.keys()));
+            table.nextRowId = maxId + 1;
+        }
+        
         return table;
     }
 }

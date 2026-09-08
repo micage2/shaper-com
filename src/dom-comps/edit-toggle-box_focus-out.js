@@ -1,3 +1,5 @@
+// File: src/dom-comps/edit-toggle-box_focus-out.js
+
 import { DomRegistry as DOM } from '../dom-registry.js';
 import { loadFragment } from '../shared/dom-helper.js';
 import EditToggle from './edit-toggle.js';
@@ -7,25 +9,25 @@ const fragment = await loadFragment(html_file);
 
 function ctor(args = {}) {
     const self = this;
-
+    
     const host = document.createElement('div');
-    const shadow = host.attachShadow({ mode: 'closed' });
+    const shadow = host.attachShadow({ mode: 'open' });
     const clone = fragment.cloneNode(true);
     shadow.appendChild(clone);
-
+    
     const wrappers = new Map();
     const toggles = new Map();
-
+    
     const leftSection = shadow.querySelector('.section-left');
     const centerSection = shadow.querySelector('.section-center');
     const rightSection = shadow.querySelector('.section-right');
-
+    
     function getSection(position) {
         if (position === 'left') return leftSection;
         if (position === 'right') return rightSection;
         return centerSection;
     }
-
+    
     function addSectionLabel(section, labelText) {
         if (!labelText) return;
         const label = document.createElement('span');
@@ -34,44 +36,57 @@ function ctor(args = {}) {
         label.style.cssText = 'font-size: var(--control-font-size, 12px); color: #666; margin-right: 4px; user-select: none;';
         section.insertBefore(label, section.firstChild);
     }
-
+    
     addSectionLabel(leftSection, args.leftLabel);
     addSectionLabel(centerSection, args.centerLabel);
     addSectionLabel(rightSection, args.rightLabel);
-
+    
+    const instance = {
+        leftSection,
+        centerSection,
+        rightSection,
+        toggles,
+        wrappers,
+        activeToggle: null,
+        shadow
+    };
+    
+    // Document click listener for click-away detection
+    document.addEventListener('click', function clickHandler(e) {
+        if (instance.activeToggle) {
+            const wrapper = instance.wrappers.get(instance.activeToggle);
+            if (wrapper) {
+                const path = e.composedPath();
+                if (!path.includes(wrapper)) {
+                    instance.activeToggle.showIdle();
+                }
+            }
+        }
+    });
+    
     return {
         getHost() { return host; },
-        getInstance() {
-            return {
-                shadow,
-                leftSection,
-                centerSection,
-                rightSection,
-                toggles,
-                wrappers,
-                activeToggle: null
-            };
-        }
+        getInstance() { return instance; }
     };
 }
 
 const IEditToggleBox = (instance) => ({
     add(name, position = 'center', idle, edit = null) {
         const toggle = DOM.create(EditToggle, { idle, edit });
-
+        
         if (!toggle) return this;
-
+        
         instance.toggles.set(name, toggle);
-
+        
         const wrapper = document.createElement('div');
         wrapper.className = 'toggle-wrapper';
-
+        
         const slot = document.createElement('slot');
         slot.name = `slot-${instance.toggles.size}`;
         wrapper.appendChild(slot);
-
+        
         instance.wrappers.set(toggle, wrapper);
-
+        
         if (position === 'left') {
             instance.leftSection.appendChild(wrapper);
         } else if (position === 'right') {
@@ -79,9 +94,9 @@ const IEditToggleBox = (instance) => ({
         } else {
             instance.centerSection.appendChild(wrapper);
         }
-
+        
         DOM.attach(toggle, this, { slot: slot.name });
-
+        
         toggle.on('edit', () => {
             instance.activeToggle = toggle;
             for (const [t, w] of instance.wrappers) {
@@ -89,17 +104,8 @@ const IEditToggleBox = (instance) => ({
                     w.style.display = 'none';
                 }
             }
-
-            // Hide section label
-            // instance.leftSection.style.display = 'none';
-            // instance.centerSection.style.display = 'none';
-            // instance.rightSection.style.display = 'none';
-            instance.shadow.querySelectorAll('.section-label').forEach(label => {
-                label.style.display = 'none';
-            });
-
         });
-
+        
         toggle.on('idle', () => {
             if (instance.activeToggle === toggle) {
                 instance.activeToggle = null;
@@ -107,24 +113,19 @@ const IEditToggleBox = (instance) => ({
             for (const w of instance.wrappers.values()) {
                 w.style.display = '';
             }
-
-            // Show all section labels
-            instance.shadow.querySelectorAll('.section-label').forEach(label => {
-                label.style.display = '';
-            });
         });
-
+        
         idle?.on('close', (data) => {
             this.emit('idle-closed', { name, data });
         });
-
+        
         edit?.on('close', (data) => {
             this.emit('edit-closed', { name, data });
         });
-
+        
         return this;
     },
-
+    
     setIdle(name, idleComp) {
         const toggle = instance.toggles.get(name);
         if (toggle) {
@@ -132,7 +133,7 @@ const IEditToggleBox = (instance) => ({
         }
         return this;
     },
-
+    
     setEdit(name, editComp) {
         const toggle = instance.toggles.get(name);
         if (toggle) {
@@ -140,7 +141,7 @@ const IEditToggleBox = (instance) => ({
         }
         return this;
     },
-
+    
     closeActive() {
         if (instance.activeToggle) {
             instance.activeToggle.showIdle();
@@ -150,9 +151,9 @@ const IEditToggleBox = (instance) => ({
 });
 
 const info = {
-    clsid: 'jscom.dom-comps.edit-toggle-box',
+    clsid: 'jscom.dom-comps.edit-toggle-box-2',
     name: 'EditToggleBox',
-    description: 'Container for EditToggles with exclusive edit mode',
+    description: 'Container for EditToggles with exclusive edit mode and click-away close',
     scheme: {
         leftLabel: 'string',
         centerLabel: 'string',

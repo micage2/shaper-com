@@ -3,15 +3,15 @@ function createGridDataAdapter(iTable) {
     const rowsChangeHandlers = new Set();
     
     // Subscribe to table events
-    iTable.on('row.added', () => {
+    iTable.on('row-added', () => {
         rowsChangeHandlers.forEach(handler => handler());
     });
     
-    iTable.on('row.deleted', () => {
+    iTable.on('row-deleted', () => {
         rowsChangeHandlers.forEach(handler => handler());
     });
     
-    iTable.on('cell.changed', (data) => {
+    iTable.on('cell-changed', (data) => {
         cellChangeHandlers.forEach(handler => handler(data));
     });
     

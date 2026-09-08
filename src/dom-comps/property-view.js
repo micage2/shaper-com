@@ -80,6 +80,21 @@ const IPropertyView = (instance) => ({
         return this;                
     },
 
+    setProperty(name, value) {
+        const entry = instance.fields.get(name);
+        if (entry) {
+            const input = entry.field.querySelector('input, select');
+            if (input) {
+                if (input.type === 'checkbox') {
+                    input.checked = value || false;
+                } else {
+                    input.value = value;
+                }
+            }
+        }
+        return this;
+    },
+
     remove(name) {
         const entry = instance.fields.get(name);
         if (entry.field) {

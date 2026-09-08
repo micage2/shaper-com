@@ -10,11 +10,11 @@ function createGridInterface(model, tableUuid) {
     const columnRenamedHandlers = new Set();
     const columnSwappedHandlers = new Set();
     
-    table.on('cell.changed', (data) => {
+    table.on('cell-changed', (data) => {
         cellChangedHandlers.forEach(handler => handler(data));
     });
     
-    table.on('row.added', (data) => {
+    table.on('row-added', (data) => {
         const rowIdx = table.rows.findIndex(row => row.id === data.rowId);
         rowAddedHandlers.forEach(handler => handler({
             rowId: data.rowId,
@@ -23,23 +23,23 @@ function createGridInterface(model, tableUuid) {
         }));
     });
     
-    table.on('row.deleted', (data) => {
+    table.on('row-deleted', (data) => {
         rowDeletedHandlers.forEach(handler => handler(data));
     });
     
-    table.on('column.added', (data) => {
+    table.on('column-added', (data) => {
         columnAddedHandlers.forEach(handler => handler(data));
     });
     
-    table.on('column.removed', (data) => {
+    table.on('column-removed', (data) => {
         columnRemovedHandlers.forEach(handler => handler(data));
     });
     
-    table.on('column.renamed', (data) => {
+    table.on('column-renamed', (data) => {
         columnRenamedHandlers.forEach(handler => handler(data));
     });
     
-    table.on('column.swapped', (data) => {
+    table.on('column-swapped', (data) => {
         columnSwappedHandlers.forEach(handler => handler(data));
     });
     

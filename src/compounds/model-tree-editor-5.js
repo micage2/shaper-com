@@ -1,19 +1,19 @@
-// src/compounds/model-tree-editor-4.js
+// src/compounds/model-tree-editor.js
 
 import { DomRegistry as DOM } from '../dom-registry.js';
-import { createTreeInterface } from '../shared/model2tree.js';
+import { buildTree } from '../shared/tree-utils.js';
 
 import TBS from '../dom-comps/top-bottom-static.js';
 import LR from '../dom-comps/left-right.js';
+import TB from '../dom-comps/top-bottom.js';
 import Toolbar from '../dom-comps/toolbar.js';
 import SelectBox from '../dom-comps/select-box.js';
 import Button from '../dom-comps/button.js';
 import TextInput from '../dom-comps/text-input.js';
 import Label from '../dom-comps/label.js';
-import TreeView from '../dom-comps/tree-view.js';
-import TreeItem from '../dom-comps/tree-item.js';
 import PropertyView from '../dom-comps/property-view.js';
-import EditToggleBox from '../dom-comps/edit-toggle-box.js';
+import EditToggleBox from '../dom-comps/edit-toggle-box_focus-out.js';
+import GridView from '../dom-comps/grid-view.js';
 
 const Selector = (options) => DOM.create(SelectBox, options);
 
@@ -43,15 +43,15 @@ function TypeSelectDialog(args) {
     const model = args.model;
     const select = Selector({ options: getTableOptions(model) });
     
-    model.on('table.created', function(data) {
+    model.on('table-created', function(data) {
         select.addOption(data.name, data.uuid);
     });
     
-    model.on('table.renamed', function(data) {
+    model.on('table-renamed', function(data) {
         select.setLabel(data.uuid, data.newName);
     });
     
-    model.on('table.deleted', function(data) {
+    model.on('table-deleted', function(data) {
         const wasSelected = select.getValue() === data.uuid;
         select.removeOption(data.uuid);
         
@@ -73,7 +73,7 @@ function TypeSelectDialog(args) {
     return select;
 }
 
-// AddTypeDialog - edit-mode dialog
+// AddTypeDialog
 function AddTypeDialog(args) {
     const model = args.model;
     const toolbar = DOM.create(Toolbar, {});
@@ -102,14 +102,14 @@ function AddTypeDialog(args) {
     return toolbar;
 }
 
-// RenameTypeDialog - edit-mode dialog
+// RenameTypeDialog
 function RenameTypeDialog(args) {
     const model = args.model;
     const tableUuid = args.tableUuid;
     const toolbar = DOM.create(Toolbar, {});
-    const input = DOM.create(TextInput, { 
-        value: getCurrentName(model, tableUuid), 
-        placeholder: 'New name' 
+    const input = DOM.create(TextInput, {
+        value: getCurrentName(model, tableUuid),
+        placeholder: 'New name'
     });
     
     const confirm = DOM.create(Button, { label: '✓' });
@@ -135,7 +135,7 @@ function RenameTypeDialog(args) {
     return toolbar;
 }
 
-// DeleteTypeDialog - edit-mode dialog
+// DeleteTypeDialog
 function DeleteTypeDialog(args) {
     const model = args.model;
     const tableUuid = args.tableUuid;
@@ -160,7 +160,7 @@ function DeleteTypeDialog(args) {
     return toolbar;
 }
 
-// AddInstanceDialog - edit-mode dialog, creates row in selected table
+// AddInstanceDialog
 function AddInstanceDialog(args) {
     const model = args.model;
     const tableUuid = args.tableUuid;
@@ -176,8 +176,7 @@ function AddInstanceDialog(args) {
         const table = model.getTable(tableUuid);
         const rowData = {};
         
-        // Find first string column to set the name
-        const nameColumn = table.columns.find(col => col.type === 1);
+        const nameColumn = table.forColumns(col => col.type === 1);
         if (nameColumn && name) {
             rowData[nameColumn.colId] = name;
         }
@@ -199,23 +198,18 @@ function AddInstanceDialog(args) {
     return toolbar;
 }
 
-// DeleteInstanceDialog - edit-mode dialog, deletes selected row
+// DeleteInstanceDialog
 function DeleteInstanceDialog(args) {
-    const model = args.model;
-    const tableUuid = args.tableUuid;
-    const rowId = args.rowId;
+    const treeView = args.treeView;
+    const selectedItem = args.selectedItem;
+    
     const toolbar = DOM.create(Toolbar, {});
     const label = DOM.create(Label, { text: 'Delete instance?' });
     
     const confirm = DOM.create(Button, { label: '✓' });
     confirm.on('clicked', function() {
-        const table = model.getTable(tableUuid);
-        if (table) {
-            table.deleteRow(rowId);
-            toolbar.emit('close', { tableUuid, rowId });
-        } else {
-            toolbar.emit('close');
-        }
+        treeView.remove(selectedItem);
+        toolbar.emit('close');
     });
     
     const cancel = DOM.create(Button, { label: '✗' });
@@ -230,7 +224,7 @@ function DeleteInstanceDialog(args) {
     return toolbar;
 }
 
-// AddPropertyDialog - edit-mode dialog
+// AddPropertyDialog
 function AddPropertyDialog(args) {
     const model = args.model;
     const tableUuid = args.tableUuid;
@@ -299,15 +293,21 @@ function AddPropertyDialog(args) {
     return toolbar;
 }
 
-// DeletePropertyDialog - edit-mode dialog
+// DeletePropertyDialog
 function DeletePropertyDialog(args) {
     const model = args.model;
     const tableUuid = args.tableUuid;
     const table = model.getTable(tableUuid);
-    const propertyOptions = table ? table.columns.map(col => ({
-        value: col.colId,
-        label: col.name
-    })) : [];
+    const propertyOptions = [];
+    
+    if (table) {
+        table.forColumns(col => {
+            propertyOptions.push({
+                value: col.colId,
+                label: col.name
+            });
+        });
+    }
     
     const toolbar = DOM.create(Toolbar, {});
     const label = DOM.create(Label, { text: 'Delete property:' });
@@ -338,88 +338,6 @@ function DeletePropertyDialog(args) {
     return toolbar;
 }
 
-// buildTree
-function buildTree(model, tableUuid) {
-    const treeView = DOM.create(TreeView, { itemClsid: TreeItem });
-    if (!treeView) return null;
-    
-    const treeInterface = createTreeInterface(model, {});
-    const { tree } = treeInterface.buildTree(tableUuid);
-    
-    let firstItem = null;
-    
-    function addNodes(nodes) {
-        const stack = [];
-        for (let i = nodes.length - 1; i >= 0; i--) {
-            stack.push({ node: nodes[i], parent: null });
-        }
-        
-        while (stack.length > 0) {
-            const { node, parent } = stack.pop();
-            
-            if (parent) {
-                treeView.select(parent, true);
-            } else {
-                treeView.select(null, true);
-            }
-            
-            const item = treeView.add({
-                label: node.label,
-                icon: node.icon,
-                type: node.type,
-                data: node.data
-            });
-
-            console.log('   '.repeat(item.getDepth()), node.label);
-            
-            if (!firstItem) firstItem = item;
-            
-            if (node.children && node.children.length > 0) {
-                treeView.select(item, true);
-                for (let i = node.children.length - 1; i >= 0; i--) {
-                    stack.push({ node: node.children[i], parent: item });
-                }
-            }
-        }
-    }
-    
-    addNodes(tree);
-    
-    // Subscribe to row events for incremental updates
-    const rootTable = model.getTable(tableUuid);
-    
-    rootTable.on('row.added', function(data) {
-        const nameColumn = rootTable.columns.find(col => col.type === 1);
-        const label = nameColumn ? data.rowData[nameColumn.colId] || `Row ${data.rowId}` : `Row ${data.rowId}`;
-        
-        treeView.select(null, true);
-        const item = treeView.add({
-            label: label,
-            icon: '📄',
-            type: 'folder',
-            data: { tableUuid, rowId: data.rowId }
-        });
-
-        if (!firstItem) {
-            firstItem = item;
-            treeView.select(item);
-        }
-    });
-    
-    rootTable.on('row.deleted', function(data) {
-        const selected = treeView.getSelected();
-        if (selected) {
-            const selectedData = selected.getData();
-            if (selectedData && selectedData.rowId === data.rowId && selectedData.tableUuid === tableUuid) {
-                treeView.remove(selected);
-                treeView.select(null);
-            }
-        }
-    });
-    
-    return { treeView, firstItem };
-}
-
 // buildProps
 function buildProps(model, tableUuid, rowId) {
     const propView = DOM.create(PropertyView, {});
@@ -428,7 +346,7 @@ function buildProps(model, tableUuid, rowId) {
     const table = model.getTable(tableUuid);
     if (!table) return propView;
     
-    table.on('column.added', function(data) {
+    table.on('column-added', function(data) {
         const prop = { name: data.columnName, type: data.type, value: '' };
         if (data.type === 42) {
             prop.options = [];
@@ -436,30 +354,51 @@ function buildProps(model, tableUuid, rowId) {
         propView.addProperty(prop);
     });
     
-    table.on('column.removed', function(data) {
+    table.on('column-removed', function(data) {
         propView.remove(data.columnName);
     });
 
+    table.on('cell-changed', (data) => {
+        if (data.rowId !== rowId) return;
+        
+        const column = table.forColumns(col => col.colId === data.colId);
+        if (column) {
+            propView.setProperty(column.name, data.newValue);
+        }
+    });
+    
     const row = rowId !== null && rowId !== undefined ? table.getRow(rowId) : null;
     
-    table.columns.forEach(col => {
+    table.forColumns(col => {
         const value = row ? row.data[col.colId] : '';
-    
+        
         const prop = {
+            colId: col.colId,
+            rowId,
             name: col.name,
             type: col.type,
-            value: value
+            value: value,
+            options: null
         };
         
         if (col.type === 42) {
             const targetTable = model.getTable(col.targetTableUuid);
-            prop.options = targetTable ? targetTable.rows.map((row, i) => ({
-                idx: row.id,
-                name: row.data[targetTable.columns[0]?.colId] || `Row ${i}`
-            })) : [];
+            prop.options = [];
+            if (targetTable) {
+                targetTable.forRows(targetRow => {
+                    prop.options.push({
+                        idx: targetRow.id,
+                        name: targetRow.data[targetTable.forColumns(c => c.type === 1)?.colId] || `Row ${targetRow.id}`
+                    });
+                });
+            }
         }
         
         propView.addProperty(prop);
+    });
+    
+    propView.on('value-changed', (prop) => {
+        table.setCell(prop.rowId, prop.colId, prop.value);
     });
     
     return propView;
@@ -473,6 +412,7 @@ export default function ModelTreeEditor(model) {
     }
     
     const mainTBS = DOM.create(TBS, { topHeight: 40 });
+    const mainTB = DOM.create(TB, {});
     const mainLR = DOM.create(LR, {});
     const mainToolbar = DOM.create(Toolbar, {});
     const editToggleBox = DOM.create(EditToggleBox, {
@@ -480,12 +420,13 @@ export default function ModelTreeEditor(model) {
         rightLabel: 'Property:'
     });
     
-    // Type select dialog
     const typeSelectDialog = TypeSelectDialog({ model });
     
-    // Handle table selection
+    // Table selection handler
     typeSelectDialog.on('table-selected', function(pkg) {
         const tableUuid = pkg.tableUuid;
+        
+        editToggleBox.closeActive();
         
         if (!tableUuid) {
             mainLR.setLeft(null);
@@ -497,12 +438,74 @@ export default function ModelTreeEditor(model) {
         
         if (result) {
             result.treeView.on('item-selected', function(item) {
-                const data = item ? item.getData() : null;
                 typeSelectDialog.emit('node-selected', {
-                    tableUuid: data ? data.tableUuid : null,
-                    rowId: data ? data.rowId : null
+                    treeView: result.treeView,
+                    item: item
                 });
             });
+            
+            result.treeView.on('item-deleted', function(item) {
+                const data = item.getData();
+                model.deleteRow(data.tableUuid, data.rowId, { cascade: false });
+            });
+            
+            const rootTable = model.getTable(tableUuid);
+            
+            rootTable.on('row-added', function(data) {
+                const nameColumn = rootTable.forColumns(col => col.type === 1);
+                const label = nameColumn ? data.rowData[nameColumn.colId] || `Row ${data.rowId}` : `Row ${data.rowId}`;
+                
+                result.treeView.select(null, true);
+                const item = result.treeView.add({
+                    label: label,
+                    icon: '📄',
+                    type: 'folder',
+                    data: { tableUuid, rowId: data.rowId }
+                });
+                
+                if (!result.firstItem) {
+                    result.firstItem = item;
+                    result.treeView.select(item);
+                }
+            });
+            
+            rootTable.on('row-deleted', function(data) {
+                const selected = result.treeView.getSelected();
+                if (selected) {
+                    const selectedData = selected.getData();
+                    if (selectedData && selectedData.rowId === data.rowId && selectedData.tableUuid === tableUuid) {
+                        result.treeView.remove(selected);
+                        result.treeView.select(null);
+                    }
+                }
+            });
+            
+            for (const table of model.tables.values()) {
+                table.on('cell-changed', function(data) {
+                    const column = table.forColumns(col => col.colId === data.colId);
+                    if (!column || column.type !== 42) return;
+                    if (data.oldValue === data.newValue) return;
+                    
+                    const item = result.treeView.find(it => {
+                        const d = it.getData();
+                        return d.tableUuid === table.uuid && d.rowId === data.rowId;
+                    });
+                    if (!item) return;
+                    
+                    const parent = result.treeView.getParent(item);
+                    if (!parent) return;
+                    
+                    const parentData = parent.getData();
+                    if (column.targetTableUuid !== parentData.tableUuid) return;
+                    
+                    const newParent = result.treeView.find(it => {
+                        const d = it.getData();
+                        return d.tableUuid === column.targetTableUuid && d.rowId === data.newValue;
+                    }) || null;
+                    
+                    result.treeView.move(item, newParent);
+                });
+            }
             
             mainLR.setLeft(result.treeView);
             
@@ -512,25 +515,36 @@ export default function ModelTreeEditor(model) {
                 result.treeView.select(null);
             }
         }
+
+        const gridView = DOM.create(GridView, {
+            model: model,
+            tableUuid: pkg.tableUuid
+        });
+        mainTB.setBottom(gridView);
         
         editToggleBox.setEdit('rename-type', RenameTypeDialog({ model, tableUuid }));
         editToggleBox.setEdit('delete-type', DeleteTypeDialog({ model, tableUuid }));
         editToggleBox.setEdit('add-instance', AddInstanceDialog({ model, tableUuid }));
     });
     
-    // Handle node selection
+    // Node selection handler
     typeSelectDialog.on('node-selected', function(pkg) {
-        const tableUuid = pkg.tableUuid || typeSelectDialog.getValue();
-        const rowId = pkg.rowId;
+        const treeView = pkg.treeView;
+        const item = pkg.item;
+        
+        editToggleBox.closeActive();
+        
+        const data = item ? item.getData() : null;
+        const tableUuid = data ? data.tableUuid : typeSelectDialog.getValue();
+        const rowId = data ? data.rowId : null;
         
         editToggleBox.setEdit('add-property', AddPropertyDialog({ model, tableUuid }));
         editToggleBox.setEdit('delete-property', DeletePropertyDialog({ model, tableUuid }));
         
-        if (pkg.tableUuid && pkg.rowId !== null) {
+        if (item) {
             editToggleBox.setEdit('delete-instance', DeleteInstanceDialog({
-                model,
-                tableUuid: pkg.tableUuid,
-                rowId: pkg.rowId
+                treeView: treeView,
+                selectedItem: item
             }));
         }
         
@@ -541,8 +555,8 @@ export default function ModelTreeEditor(model) {
     // Add toggles to EditToggleBox
     editToggleBox.add('type-select', 'left', typeSelectDialog, null);
     
-    editToggleBox.add('add-type', 'left', 
-        IdleButtonDialog('New'), 
+    editToggleBox.add('add-type', 'left',
+        IdleButtonDialog('New'),
         AddTypeDialog({ model }));
     
     editToggleBox.add('rename-type', 'left',
@@ -570,9 +584,9 @@ export default function ModelTreeEditor(model) {
         null);
     
     // Assemble
-    mainToolbar.add(editToggleBox);
-    mainTBS.setTop(mainToolbar);
-    mainTBS.setBottom(mainLR);
+    mainTBS.setTop(editToggleBox);
+    mainTBS.setBottom(mainTB);
+    mainTB.setTop(mainLR);
     
     // Initial state
     const tables = Array.from(model.tables.values());

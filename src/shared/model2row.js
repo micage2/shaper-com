@@ -4,7 +4,7 @@ function createRowDataInterface(model, tableUuid, rowIdx) {
     
     const callbacks = new Set();
     
-    table.on('cell.changed', (data) => {
+    table.on('cell-changed', (data) => {
         if (data.rowIdx === rowIdx) {
             callbacks.forEach(cb => cb());
         }
