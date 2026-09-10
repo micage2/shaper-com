@@ -180,16 +180,12 @@ class Table {
     }
     
     deleteRow(rowId) {
-        if (!this.rows.delete(rowId)) {
-            console.error(`[Table ${this.name}] Row '${rowId}' not found`);
-            return false;
+        if (this.rows.delete(rowId)) {
+            this.emit('row-deleted', {
+                tableUuid: this.uuid,
+                rowId: rowId
+            });
         }
-        
-        this.emit('row-deleted', {
-            rowId: rowId
-        });
-        
-        return true;
     }
     
     getRow(rowId) {
@@ -218,6 +214,7 @@ class Table {
         
         const column = this.columns.get(colId);
         this.emit('cell-changed', {
+            tableUuid: this.uuid,
             rowId: rowId,
             colId: colId,
             columnName: column ? column.name : '',

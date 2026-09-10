@@ -9,8 +9,10 @@ import TabView from '../dom-comps/tab-view.js';
 import LR from '../dom-comps/left-right.js';
 import TB from '../dom-comps/top-bottom.js';
 import TBS from '../dom-comps/top-bottom-static.js';
+
 import ETBT from '../compounds/edit-toggle-box-test.js';
-import GridViewTest from '../compounds/grid-view-test.js';
+// import GridViewTest from '../compounds/grid-view-test.js';
+import GridViewSortingTest from '../compounds/grid-view-sorting-test.js';
 import GridToolbarTest from '../compounds/grid-toolbar-test.js';
 import TreeViewTest from '../compounds/tree-view-test.js';
 import ListViewTest from '../compounds/list-view-test.js';
@@ -48,7 +50,7 @@ tabView
     .add('Tab 4', tbs('Nothing to see here either.'), { icon: '🌼' })
     .add('Tab 5', tbs('Have a break.'), { icon: '☕' })
     // .add('FocusTest', FocusTest('Have a break.'), { icon: '☕' })
-    .add('Grid', GridViewTest(model), { icon: '☕' })
+    .add('Grid', GridViewSortingTest(model), { icon: '☕' })
 
 DOM.mount(tabView);
 

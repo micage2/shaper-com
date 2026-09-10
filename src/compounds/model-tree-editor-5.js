@@ -410,7 +410,7 @@ export default function ModelTreeEditor(model) {
         console.error('[ModelTreeEditor] Model is required');
         return null;
     }
-    
+
     const mainTBS = DOM.create(TBS, { topHeight: 40 });
     const mainTB = DOM.create(TB, {});
     const mainLR = DOM.create(LR, {});
@@ -437,6 +437,7 @@ export default function ModelTreeEditor(model) {
         const result = buildTree(model, tableUuid);
         
         if (result) {
+            const treeView = result.treeView;
             result.treeView.on('item-selected', function(item) {
                 typeSelectDialog.emit('node-selected', {
                     treeView: result.treeView,
@@ -448,6 +449,17 @@ export default function ModelTreeEditor(model) {
                 const data = item.getData();
                 model.deleteRow(data.tableUuid, data.rowId, { cascade: false });
             });
+
+            result.treeView.on('item-label-changed', function(pkg) {
+                const data = pkg.item.getData();
+                const table = model.getTable(data.tableUuid);
+                if (!table) return;
+                
+                const nameColumn = table.forColumns(col => col.type === 1);
+                if (nameColumn) {
+                    table.setCell(data.rowId, nameColumn.colId, pkg.newLabel);
+                }
+            });            
             
             const rootTable = model.getTable(tableUuid);
             
@@ -465,7 +477,7 @@ export default function ModelTreeEditor(model) {
                 
                 if (!result.firstItem) {
                     result.firstItem = item;
-                    result.treeView.select(item);
+                    treeView.select(item);
                 }
             });
             
@@ -474,17 +486,39 @@ export default function ModelTreeEditor(model) {
                 if (selected) {
                     const selectedData = selected.getData();
                     if (selectedData && selectedData.rowId === data.rowId && selectedData.tableUuid === tableUuid) {
-                        result.treeView.remove(selected);
-                        result.treeView.select(null);
+                        treeView.remove(selected);
+                        treeView.select(null);
                     }
                 }
             });
             
             for (const table of model.tables.values()) {
+                table.on('row-deleted', function(data) {
+                    const item = treeView.find(it => {
+                        const d = it.getData();
+                        return d.tableUuid === data.tableUuid && d.rowId === data.rowId;
+                    });
+                    if (item) {
+                        treeView.remove(item);
+                    }
+                });
+
                 table.on('cell-changed', function(data) {
-                    const column = table.forColumns(col => col.colId === data.colId);
-                    if (!column || column.type !== 42) return;
                     if (data.oldValue === data.newValue) return;
+                    const column = table.forColumns(col => col.colId === data.colId);
+
+                    if (column.type === 1) {
+                        const item = result.treeView.find(it => {
+                            const d = it.getData();
+                            return d.tableUuid === data.tableUuid && d.rowId === data.rowId;
+                        });
+                        if (item) {
+                            item.setLabel(data.newValue);
+                        }
+                        return;
+                    }
+
+                    if (!column || column.type !== 42) return;
                     
                     const item = result.treeView.find(it => {
                         const d = it.getData();
