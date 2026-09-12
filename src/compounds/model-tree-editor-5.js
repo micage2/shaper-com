@@ -13,7 +13,7 @@ import TextInput from '../dom-comps/text-input.js';
 import Label from '../dom-comps/label.js';
 import PropertyView from '../dom-comps/property-view.js';
 import EditToggleBox from '../dom-comps/edit-toggle-box_focus-out.js';
-import GridView from '../dom-comps/grid-view.js';
+import GridView from '../dom-comps/grid-view-sorting.js';
 
 const Selector = (options) => DOM.create(SelectBox, options);
 
@@ -271,7 +271,7 @@ function AddPropertyDialog(args) {
             return;
         }
         
-        const spec = { name, type };
+        const spec = { name, type: null };
         if (type === 42 && targetSelect) {
             spec.targetTableUuid = targetSelect.getValue();
         }

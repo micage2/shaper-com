@@ -44,6 +44,10 @@ const typeStrings = ['string', 'number', 'boolean', 'link'];
 const input_types = ['text', 'number', 'checkbox', ''];
 
 const IPropertyView = (instance) => ({
+    /**
+     * collects data and creates UI
+     * emit: 'value-changed' with msg = { name, value, type }
+     */
     addProperty(prop) {
         const typeIndex = typeIds.indexOf(prop.type);
         if (typeIndex < 0) {
@@ -68,7 +72,7 @@ const IPropertyView = (instance) => ({
             }
             child.value = String(prop.value);
         }
-        child.addEventListener('blur', () => {
+        child.addEventListener('change', () => {
             if (prop.type === 1) prop.value = child.value;
             else if (prop.type === 2) prop.value = Number(child.value);
             else if (prop.type === 3) prop.value = child.checked || false;
@@ -87,7 +91,8 @@ const IPropertyView = (instance) => ({
             if (input) {
                 if (input.type === 'checkbox') {
                     input.checked = value || false;
-                } else {
+                }
+                else {
                     input.value = value;
                 }
             }
