@@ -53,7 +53,11 @@ const ISelectBox = ({ host, _addOption, _removeOption, _setLabel }) => ({
     setValue(value) { host.value = value; },
     addOption(label, value) { _addOption({label, value}); },
     removeOption(value) { _removeOption(value) },
-    setLabel(value, label) { _setLabel(value, label) }
+    setLabel(value, label) { _setLabel(value, label) },
+    focus() {
+        host.focus();
+        return this;
+    }
 });
 
 const info = {

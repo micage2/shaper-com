@@ -104,6 +104,15 @@ const ITreeView = (instance) => ({
         }
     },
 
+    // if callback is not returning a truthy value the whole item array will be iterated
+    // combines the two functions above
+    forItems(callback) {
+        for (const item of instance.state.items) {
+            if (callback(item)) return item;
+        }
+        return null;
+    },
+
     add(itemData) {
         const selected = this.getSelected();
         if (selected && !selected.isFolder()) {

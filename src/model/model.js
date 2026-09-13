@@ -1,4 +1,5 @@
 import { Table } from './table.js';
+import { Column } from './column.js';
 
 class Model {
     constructor() {
@@ -13,7 +14,6 @@ class Model {
         return 'uuid-' + Math.random().toString(36).substr(2, 9);
     }
     
-    // === Events ===
     on(event, handler) {
         if (!this.eventHandlers.has(event)) {
             this.eventHandlers.set(event, new Set());
@@ -36,19 +36,30 @@ class Model {
         }
     }
     
-    // === Table operations ===
     createTable(name) {
         const uuid = this.generateUuid();
         const table = new Table(uuid, name);
-        table.addRow({});
+        
+        const nameColumn = new Column('name', 1);
+        table.columns.set(nameColumn.colId, nameColumn);
+        
+        this._subscribeTable(table);
         this.tables.set(uuid, table);
         
         this.emit('table-created', { uuid, name });
+        table.emit('column-added', {
+            tableUuid: uuid,
+            colId: nameColumn.colId,
+            columnName: nameColumn.name,
+            type: nameColumn.type,
+            targetTableUuid: null
+        });
+        
         return table;
     }
     
     deleteTable(uuid) {
-        const table = this.getTable(uuid);
+        const table = this.tables.get(uuid);
         if (!table) return false;
         
         this.tables.delete(uuid);
@@ -57,7 +68,7 @@ class Model {
     }
     
     renameTable(uuid, newName) {
-        const table = this.getTable(uuid);
+        const table = this.tables.get(uuid);
         if (!table) return false;
         
         const oldName = table.name;
@@ -75,7 +86,59 @@ class Model {
         return table;
     }
     
-    // === Spanning tree ===
+    addColumn(tableUuid, spec) {
+        const table = this.getTable(tableUuid);
+        if (!table) return false;
+        
+        for (const col of table.columns.values()) {
+            if (col.name === spec.name) {
+                console.error(`[Model] Column '${spec.name}' already exists`);
+                return false;
+            }
+        }
+        
+        if (![1, 2, 3, 42].includes(spec.type)) {
+            console.error(`[Model] Invalid column type: ${spec.type}`);
+            return false;
+        }
+        
+        let firstTargetRow = null;
+        if (spec.type === 42) {
+            if (!spec.targetTableUuid) {
+                console.error('[Model] Link column requires targetTableUuid');
+                return false;
+            }
+            const targetTable = this.getTable(spec.targetTableUuid);
+            if (!targetTable) {
+                console.error('[Model] Link target table not found');
+                return false;
+            }
+            firstTargetRow = targetTable.forRows(() => true);
+            if (!firstTargetRow) {
+                console.error('[Model] Link target table has no rows');
+                return false;
+            }
+        }
+        
+        const column = new Column(spec.name, spec.type, spec.targetTableUuid || null);
+        table.columns.set(column.colId, column);
+        
+        const defaultValue = (spec.type === 42 && firstTargetRow) ? firstTargetRow.id : column.defaultValue;
+        for (const row of table.rows.values()) {
+            row.data[column.colId] = defaultValue;
+        }
+        
+        table.emit('column-added', {
+            tableUuid: table.uuid,
+            colId: column.colId,
+            columnName: column.name,
+            type: column.type,
+            targetTableUuid: column.targetTableUuid
+        });
+        
+        return column;
+    }
+    
     findChildren(tableUuid, rowId) {
         const children = [];
         
@@ -143,29 +206,9 @@ class Model {
         return rootNodes;
     }
     
-    getRowLabel(table, rowId) {
-        const row = table.getRow(rowId);
-        if (!row) return `Row ${rowId}`;
-        
-        for (const column of table.columns.values()) {
-            if (column.name === 'name' && row.data[column.colId]) {
-                return row.data[column.colId];
-            }
-        }
-        
-        for (const column of table.columns.values()) {
-            if (column.type === 1 && row.data[column.colId]) {
-                return row.data[column.colId];
-            }
-        }
-        
-        return `Row ${rowId}`;
-    }
-    
     deleteRow(tableUuid, rowId, { cascade = true } = {}) {
         const table = this.getTable(tableUuid);
         if (!table) return false;
-        
         if (!table.rows.has(rowId)) return false;
         
         const deleted = [];
@@ -194,7 +237,19 @@ class Model {
         return deleted;
     }
     
-    // === Serialization ===
+    _subscribeTable(table) {
+        const events = [
+            'column-added', 'column-removed', 'column-renamed', 'column-swapped',
+            'row-added', 'row-deleted', 'cell-changed'
+        ];
+        
+        for (const eventName of events) {
+            table.on(eventName, (data) => {
+                this.emit(eventName, data);
+            });
+        }
+    }
+    
     toJSON() {
         return {
             tables: Array.from(this.tables.values()).map(table => table.toJSON())
@@ -205,6 +260,7 @@ class Model {
         const model = new Model();
         for (const tableData of data.tables) {
             const table = Table.fromJSON(tableData);
+            model._subscribeTable(table);
             model.tables.set(table.uuid, table);
         }
         return model;

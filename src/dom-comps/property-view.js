@@ -6,7 +6,7 @@ function ctor(args = {}) {
     const host = document.createElement('div');
     host.style.cssText = 'display:flex !important; flex-direction:column !important; width:100% !important; height:100% !important; overflow-y:auto !important; overflow-x:hidden !important; box-sizing:border-box !important;';
     
-    const fields = new Map(); // string -> HTMLElement (prop field)
+    const fields = new Map();
     
     function createField(name, cell) {
         const field = document.createElement('div');
@@ -21,7 +21,7 @@ function ctor(args = {}) {
         valueContainer.style.cssText = 'flex:1;';
         field.appendChild(valueContainer);
         
-        fields.set(name, {field, cell});
+        fields.set(name, { field, cell });
         host.appendChild(field);
         
         return valueContainer;
@@ -30,39 +30,35 @@ function ctor(args = {}) {
     return {
         getHost() { return host; },
         getInstance() { 
-            return { 
-                host,
-                fields,
-                createField
-            }; 
+            return { host, fields, createField }; 
         }
     };
 }
 
 const typeIds = [1, 2, 3, 42];
-const typeStrings = ['string', 'number', 'boolean', 'link'];
 const input_types = ['text', 'number', 'checkbox', ''];
 
 const IPropertyView = (instance) => ({
-    /**
-     * collects data and creates UI
-     * emit: 'value-changed' with msg = { name, value, type }
-     */
-    addProperty(prop) {
+    add(prop) {
         const typeIndex = typeIds.indexOf(prop.type);
         if (typeIndex < 0) {
             console.warn('Invalid datatype', prop.type);
             return null;
         }
+        if (instance.fields.has(prop.name)) return null;
+        
         const container = instance.createField(prop.name, prop);
         let child;
+        
         if (prop.type !== 42) {
             child = document.createElement('input');
             child.type = input_types[typeIndex];
-            child.value = prop.value;
-            child.checked = prop.type === 3 ? prop.value : '';
-        }
-        else {
+            if (prop.type === 3) {
+                child.checked = prop.value || false;
+            } else {
+                child.value = prop.value !== null && prop.value !== undefined ? prop.value : '';
+            }
+        } else {
             child = document.createElement('select');
             for (const option of prop.options || []) {
                 const opt = document.createElement('option');
@@ -70,41 +66,55 @@ const IPropertyView = (instance) => ({
                 opt.textContent = option.name;
                 child.appendChild(opt);
             }
-            child.value = String(prop.value);
+            if (prop.value !== null && prop.value !== undefined) {
+                child.value = String(prop.value);
+            }
         }
+        
         child.addEventListener('change', () => {
-            if (prop.type === 1) prop.value = child.value;
-            else if (prop.type === 2) prop.value = Number(child.value);
-            else if (prop.type === 3) prop.value = child.checked || false;
-            else if (prop.type === 42) prop.value = Number(child.value);
-            this.emit('value-changed', prop);
+            const oldValue = prop.value;
+            let newValue;
+            
+            if (prop.type === 1) newValue = child.value;
+            else if (prop.type === 2) newValue = Number(child.value);
+            else if (prop.type === 3) newValue = child.checked || false;
+            else if (prop.type === 42) newValue = Number(child.value);
+            
+            prop.value = newValue;
+            
+            this.emit('value-changed', {
+                tableUuid: prop.tableUuid,
+                colId: prop.colId,
+                rowId: prop.rowId,
+                oldValue: oldValue,
+                value: newValue
+            });
         });
         
         container.appendChild(child);
-        return this;                
+        return this;
     },
-
-    setProperty(name, value) {
+    
+    remove(name) {
+        const entry = instance.fields.get(name);
+        if (entry && entry.field) {
+            entry.field.remove();
+            instance.fields.delete(name);
+        }
+        return this;
+    },
+    
+    set(name, value) {
         const entry = instance.fields.get(name);
         if (entry) {
             const input = entry.field.querySelector('input, select');
             if (input) {
                 if (input.type === 'checkbox') {
                     input.checked = value || false;
-                }
-                else {
-                    input.value = value;
+                } else {
+                    input.value = value !== null && value !== undefined ? value : '';
                 }
             }
-        }
-        return this;
-    },
-
-    remove(name) {
-        const entry = instance.fields.get(name);
-        if (entry.field) {
-            entry.field.remove();
-            instance.fields.delete(name);
         }
         return this;
     }

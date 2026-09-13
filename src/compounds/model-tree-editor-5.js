@@ -1,7 +1,7 @@
 // src/compounds/model-tree-editor.js
 
 import { DomRegistry as DOM } from '../dom-registry.js';
-import { buildTree } from '../shared/tree-utils.js';
+import { buildTree, getTableIcon, addTreeNode } from '../shared/tree-utils.js';
 
 import TBS from '../dom-comps/top-bottom-static.js';
 import LR from '../dom-comps/left-right.js';
@@ -12,7 +12,8 @@ import Button from '../dom-comps/button.js';
 import TextInput from '../dom-comps/text-input.js';
 import Label from '../dom-comps/label.js';
 import PropertyView from '../dom-comps/property-view.js';
-import EditToggleBox from '../dom-comps/edit-toggle-box_focus-out.js';
+// import TwoStateBox from '../dom-comps/edit-toggle-box_focus-out.js';
+import TwoStateBox from '../dom-comps/two-state-box.js';
 import GridView from '../dom-comps/grid-view-sorting.js';
 
 const Selector = (options) => DOM.create(SelectBox, options);
@@ -77,7 +78,9 @@ function TypeSelectDialog(args) {
 function AddTypeDialog(args) {
     const model = args.model;
     const toolbar = DOM.create(Toolbar, {});
+    const label = DOM.create(Label, { text: `Create Type:` });
     const input = DOM.create(TextInput, { value: '', placeholder: 'Type name' });
+    input.focus();
     
     const confirm = DOM.create(Button, { label: '✓' });
     confirm.on('clicked', function() {
@@ -95,10 +98,15 @@ function AddTypeDialog(args) {
         toolbar.emit('close');
     });
     
+    toolbar.add(label);
     toolbar.add(input);
     toolbar.add(confirm);
     toolbar.add(cancel);
-    
+
+    toolbar.on('mounted', () => {
+        input.focus();
+    });
+
     return toolbar;
 }
 
@@ -107,6 +115,8 @@ function RenameTypeDialog(args) {
     const model = args.model;
     const tableUuid = args.tableUuid;
     const toolbar = DOM.create(Toolbar, {});
+    const label = DOM.create(Label, { text: `Rename Type:` });
+
     const input = DOM.create(TextInput, {
         value: getCurrentName(model, tableUuid),
         placeholder: 'New name'
@@ -128,6 +138,7 @@ function RenameTypeDialog(args) {
         toolbar.emit('close');
     });
     
+    toolbar.add(label);
     toolbar.add(input);
     toolbar.add(confirm);
     toolbar.add(cancel);
@@ -225,7 +236,7 @@ function DeleteInstanceDialog(args) {
 }
 
 // AddPropertyDialog
-function AddPropertyDialog(args) {
+function __AddPropertyDialog(args) {
     const model = args.model;
     const tableUuid = args.tableUuid;
     const typeOptions = getTableOptions(model);
@@ -271,12 +282,93 @@ function AddPropertyDialog(args) {
             return;
         }
         
-        const spec = { name, type: null };
-        if (type === 42 && targetSelect) {
+        const spec = { name, type: Number(typeSelect.getValue()) };
+        if (spec.type === 42 && targetSelect) {
             spec.targetTableUuid = targetSelect.getValue();
         }
         
         table.addColumn(spec);
+        toolbar.emit('close', spec);
+    });
+    
+    const cancel = DOM.create(Button, { label: '✗' });
+    cancel.on('clicked', function() {
+        toolbar.emit('close');
+    });
+    
+    toolbar.add(input);
+    toolbar.add(typeSelect);
+    toolbar.add(confirm);
+    toolbar.add(cancel);
+    
+    return toolbar;
+}
+
+function AddPropertyDialog(args) {
+    const model = args.model;
+    const tableUuid = args.tableUuid;
+    
+    const allTables = Array.from(model.tables.values());
+    const linkTargets = [];
+    
+    for (const t of allTables) {
+        let hasRows = false;
+        t.forRows(() => { hasRows = true; return true; });
+        if (hasRows) {
+            linkTargets.push({ value: t.uuid, label: t.name });
+        }
+    }
+    
+    const toolbar = DOM.create(Toolbar, {});
+    const input = DOM.create(TextInput, { value: '', placeholder: 'Property name' });
+    
+    const typeSelectOptions = [
+        { value: String(1), label: 'String' },
+        { value: String(2), label: 'Number' },
+        { value: String(3), label: 'Boolean' }
+    ];
+    
+    if (linkTargets.length > 0) {
+        typeSelectOptions.push({ value: String(42), label: 'Link' });
+    }
+    
+    const typeSelect = Selector({ options: typeSelectOptions });
+    
+    let targetSelect = null;
+    
+    typeSelect.on('changed', function(msg) {
+        const type = Number(msg.value);
+        if (type === 42 && !targetSelect) {
+            targetSelect = Selector({ options: linkTargets });
+            toolbar.add(targetSelect, { after: typeSelect });
+        } else if (type !== 42 && targetSelect) {
+            toolbar.remove(targetSelect);
+            targetSelect = null;
+        }
+    });
+    
+    const confirm = DOM.create(Button, { label: '✓' });
+    confirm.on('clicked', function() {
+        const name = input.getValue().trim();
+        const type = Number(typeSelect.getValue());
+        
+        if (!name) {
+            toolbar.emit('close');
+            return;
+        }
+        
+        const table = model.getTable(tableUuid);
+        if (!table) {
+            toolbar.emit('close');
+            return;
+        }
+        
+        const spec = { name, type };
+        if (type === 42 && targetSelect) {
+            spec.targetTableUuid = targetSelect.getValue();
+        }
+        
+        model.addColumn(tableUuid, spec);
         toolbar.emit('close', { name, type });
     });
     
@@ -347,13 +439,40 @@ function buildProps(model, tableUuid, rowId) {
     if (!table) return propView;
     
     table.on('column-added', function(data) {
-        const prop = { name: data.columnName, type: data.type, value: '' };
-        if (data.type === 42) {
+        if (data.tableUuid !== tableUuid) return;
+        
+        const col = table.forColumns(c => c.colId === data.colId);
+        if (!col) return;
+        
+        const value = row ? row.data[col.colId] : '';
+        
+        const prop = {
+            tableUuid: data.tableUuid,
+            colId: col.colId,
+            rowId: rowId,
+            name: col.name,
+            type: col.type,
+            value: value,
+            options: null
+        };
+        
+        if (col.type === 42) {
+            const targetTable = model.getTable(col.targetTableUuid);
             prop.options = [];
+            if (targetTable) {
+                targetTable.forRows((targetRow) => {
+                    const nameCol = targetTable.forColumns(c => c.type === 1);
+                    prop.options.push({
+                        idx: targetRow.id,
+                        name: nameCol ? targetRow.data[nameCol.colId] || `Row ${targetRow.id}` : `Row ${targetRow.id}`
+                    });
+                });
+            }
         }
-        propView.addProperty(prop);
+        
+        propView.add(prop);
     });
-    
+
     table.on('column-removed', function(data) {
         propView.remove(data.columnName);
     });
@@ -363,7 +482,7 @@ function buildProps(model, tableUuid, rowId) {
         
         const column = table.forColumns(col => col.colId === data.colId);
         if (column) {
-            propView.setProperty(column.name, data.newValue);
+            propView.set(column.name, data.newValue);
         }
     });
     
@@ -394,7 +513,7 @@ function buildProps(model, tableUuid, rowId) {
             }
         }
         
-        propView.addProperty(prop);
+        propView.add(prop);
     });
     
     propView.on('value-changed', (prop) => {
@@ -415,7 +534,7 @@ export default function ModelTreeEditor(model) {
     const mainTB = DOM.create(TB, {});
     const mainLR = DOM.create(LR, {});
     const mainToolbar = DOM.create(Toolbar, {});
-    const editToggleBox = DOM.create(EditToggleBox, {
+    const twoStateBox = DOM.create(TwoStateBox, {
         centerLabel: 'Instance:',
         rightLabel: 'Property:'
     });
@@ -426,7 +545,7 @@ export default function ModelTreeEditor(model) {
     typeSelectDialog.on('table-selected', function(pkg) {
         const tableUuid = pkg.tableUuid;
         
-        editToggleBox.closeActive();
+        twoStateBox.closeActive();
         
         if (!tableUuid) {
             mainLR.setLeft(null);
@@ -434,23 +553,19 @@ export default function ModelTreeEditor(model) {
             return;
         }
         
-        const result = buildTree(model, tableUuid);
+        const treeView = buildTree(model, tableUuid);
         
-        if (result) {
-            const treeView = result.treeView;
-            result.treeView.on('item-selected', function(item) {
-                typeSelectDialog.emit('node-selected', {
-                    treeView: result.treeView,
-                    item: item
-                });
+        if (treeView) {
+            treeView.on('item-selected', function(item) {
+                typeSelectDialog.emit('node-selected', { treeView, item });
             });
             
-            result.treeView.on('item-deleted', function(item) {
+            treeView.on('item-deleted', function(item) {
                 const data = item.getData();
                 model.deleteRow(data.tableUuid, data.rowId, { cascade: false });
             });
 
-            result.treeView.on('item-label-changed', function(pkg) {
+            treeView.on('item-label-changed', function(pkg) {
                 const data = pkg.item.getData();
                 const table = model.getTable(data.tableUuid);
                 if (!table) return;
@@ -463,26 +578,33 @@ export default function ModelTreeEditor(model) {
             
             const rootTable = model.getTable(tableUuid);
             
-            rootTable.on('row-added', function(data) {
+            rootTable.on('__row-added', function(data) {
                 const nameColumn = rootTable.forColumns(col => col.type === 1);
                 const label = nameColumn ? data.rowData[nameColumn.colId] || `Row ${data.rowId}` : `Row ${data.rowId}`;
                 
-                result.treeView.select(null, true);
-                const item = result.treeView.add({
+                treeView.select(null, true);
+                const item = treeView.add({
                     label: label,
-                    icon: '📄',
+                    icon: getTableIcon(model, tableUuid),
                     type: 'folder',
                     data: { tableUuid, rowId: data.rowId }
                 });
                 
-                if (!result.firstItem) {
-                    result.firstItem = item;
+                treeView.select(treeView.forItems(() => true));
+            });
+
+            rootTable.on('row-added', function(data) {
+                const item = addTreeNode(model, treeView, {
+                    data: { tableUuid: data.tableUuid, rowId: data.rowId }
+                }, null);
+                
+                if (!treeView.getSelected()) {
                     treeView.select(item);
                 }
-            });
+            });            
             
             rootTable.on('row-deleted', function(data) {
-                const selected = result.treeView.getSelected();
+                const selected = treeView.getSelected();
                 if (selected) {
                     const selectedData = selected.getData();
                     if (selectedData && selectedData.rowId === data.rowId && selectedData.tableUuid === tableUuid) {
@@ -508,7 +630,7 @@ export default function ModelTreeEditor(model) {
                     const column = table.forColumns(col => col.colId === data.colId);
 
                     if (column.type === 1) {
-                        const item = result.treeView.find(it => {
+                        const item = treeView.find(it => {
                             const d = it.getData();
                             return d.tableUuid === data.tableUuid && d.rowId === data.rowId;
                         });
@@ -520,34 +642,30 @@ export default function ModelTreeEditor(model) {
 
                     if (!column || column.type !== 42) return;
                     
-                    const item = result.treeView.find(it => {
+                    const item = treeView.find(it => {
                         const d = it.getData();
                         return d.tableUuid === table.uuid && d.rowId === data.rowId;
                     });
                     if (!item) return;
                     
-                    const parent = result.treeView.getParent(item);
+                    const parent = treeView.getParent(item);
                     if (!parent) return;
                     
                     const parentData = parent.getData();
                     if (column.targetTableUuid !== parentData.tableUuid) return;
                     
-                    const newParent = result.treeView.find(it => {
+                    const newParent = treeView.find(it => {
                         const d = it.getData();
                         return d.tableUuid === column.targetTableUuid && d.rowId === data.newValue;
                     }) || null;
                     
-                    result.treeView.move(item, newParent);
+                    treeView.move(item, newParent);
                 });
             }
             
-            mainLR.setLeft(result.treeView);
+            mainLR.setLeft(treeView);
             
-            if (result.firstItem) {
-                result.treeView.select(result.firstItem);
-            } else {
-                result.treeView.select(null);
-            }
+            treeView.select(treeView.forItems(() => true));
         }
 
         const gridView = DOM.create(GridView, {
@@ -556,9 +674,9 @@ export default function ModelTreeEditor(model) {
         });
         mainTB.setBottom(gridView);
         
-        editToggleBox.setEdit('rename-type', RenameTypeDialog({ model, tableUuid }));
-        editToggleBox.setEdit('delete-type', DeleteTypeDialog({ model, tableUuid }));
-        editToggleBox.setEdit('add-instance', AddInstanceDialog({ model, tableUuid }));
+        twoStateBox.setEdit('rename-type', RenameTypeDialog({ model, tableUuid }));
+        twoStateBox.setEdit('delete-type', DeleteTypeDialog({ model, tableUuid }));
+        twoStateBox.setEdit('add-instance', AddInstanceDialog({ model, tableUuid }));
     });
     
     // Node selection handler
@@ -566,17 +684,17 @@ export default function ModelTreeEditor(model) {
         const treeView = pkg.treeView;
         const item = pkg.item;
         
-        editToggleBox.closeActive();
+        twoStateBox.closeActive();
         
         const data = item ? item.getData() : null;
         const tableUuid = data ? data.tableUuid : typeSelectDialog.getValue();
         const rowId = data ? data.rowId : null;
         
-        editToggleBox.setEdit('add-property', AddPropertyDialog({ model, tableUuid }));
-        editToggleBox.setEdit('delete-property', DeletePropertyDialog({ model, tableUuid }));
+        twoStateBox.setEdit('add-property', AddPropertyDialog({ model, tableUuid }));
+        twoStateBox.setEdit('delete-property', DeletePropertyDialog({ model, tableUuid }));
         
         if (item) {
-            editToggleBox.setEdit('delete-instance', DeleteInstanceDialog({
+            twoStateBox.setEdit('delete-instance', DeleteInstanceDialog({
                 treeView: treeView,
                 selectedItem: item
             }));
@@ -586,39 +704,39 @@ export default function ModelTreeEditor(model) {
         mainLR.setRight(propView);
     });
     
-    // Add toggles to EditToggleBox
-    editToggleBox.add('type-select', 'left', typeSelectDialog, null);
+    // Add toggles to TwoStateBox
+    twoStateBox.add('type-select', 'left', typeSelectDialog, null);
     
-    editToggleBox.add('add-type', 'left',
+    twoStateBox.add('add-type', 'left',
         IdleButtonDialog('New'),
         AddTypeDialog({ model }));
     
-    editToggleBox.add('rename-type', 'left',
+    twoStateBox.add('rename-type', 'left',
         IdleButtonDialog('Rename'),
         null);
     
-    editToggleBox.add('delete-type', 'left',
+    twoStateBox.add('delete-type', 'left',
         IdleButtonDialog('Delete'),
         null);
     
-    editToggleBox.add('add-instance', 'center',
+    twoStateBox.add('add-instance', 'center',
         IdleButtonDialog('New'),
         null);
     
-    editToggleBox.add('delete-instance', 'center',
+    twoStateBox.add('delete-instance', 'center',
         IdleButtonDialog('Delete'),
         null);
     
-    editToggleBox.add('add-property', 'right',
+    twoStateBox.add('add-property', 'right',
         IdleButtonDialog('New'),
         null);
     
-    editToggleBox.add('delete-property', 'right',
+    twoStateBox.add('delete-property', 'right',
         IdleButtonDialog('Delete'),
         null);
     
     // Assemble
-    mainTBS.setTop(editToggleBox);
+    mainTBS.setTop(twoStateBox);
     mainTBS.setBottom(mainTB);
     mainTB.setTop(mainLR);
     

@@ -3,6 +3,8 @@ import TreeView from '../dom-comps/tree-view.js';
 import TreeItem from '../dom-comps/tree-item.js';
 
 export function getRowLabel(model, tableUuid, rowId) {
+    if (rowId === null || rowId === undefined) return '';
+    
     const table = model.getTable(tableUuid);
     if (!table) return `Row ${rowId}`;
     
@@ -22,7 +24,10 @@ export function getRowLabel(model, tableUuid, rowId) {
     return `Row ${rowId}`;
 }
 
-export function getTableIcon(tableName) {
+export function getTableIcon(model, tableUuid) {
+    const table = model.getTable(tableUuid);
+    if (!table) return '📄';
+    
     const icons = {
         'City': '🏙️',
         'Building': '🏢',
@@ -30,7 +35,26 @@ export function getTableIcon(tableName) {
         'Person': '👤',
         'Architect': '📐'
     };
-    return icons[tableName] || '📄';
+
+    return icons[table.name] || '📄';
+}
+
+export function addTreeNode(model, treeView, node, parent) {
+    if (parent) {
+        treeView.select(parent, true);
+    } else {
+        treeView.select(null, true);
+    }
+    
+    const table = model.getTable(node.data.tableUuid);
+    const tableName = table ? table.name : '';
+    
+    return treeView.add({
+        label: getRowLabel(model, node.data.tableUuid, node.data.rowId),
+        icon: getTableIcon(model, node.data.tableUuid),
+        type: 'folder',
+        data: node.data
+    });
 }
 
 export function buildTree(model, tableUuid) {
@@ -38,8 +62,6 @@ export function buildTree(model, tableUuid) {
     if (!treeView) return null;
     
     const tree = model.buildTree(tableUuid);
-    
-    let firstItem = null;
     
     function addNodes(nodes) {
         const stack = [];
@@ -49,24 +71,8 @@ export function buildTree(model, tableUuid) {
         
         while (stack.length > 0) {
             const { node, parent } = stack.pop();
-            
-            if (parent) {
-                treeView.select(parent, true);
-            } else {
-                treeView.select(null, true);
-            }
-            
-            const table = model.getTable(node.data.tableUuid);
-            const tableName = table ? table.name : '';
-            
-            const item = treeView.add({
-                label: getRowLabel(model, node.data.tableUuid, node.data.rowId),
-                icon: getTableIcon(tableName),
-                type: 'folder',
-                data: node.data
-            });
-            
-            if (!firstItem) firstItem = item;
+
+            const item = addTreeNode(model, treeView, node, parent);
             
             if (node.children && node.children.length > 0) {
                 treeView.select(item, true);
@@ -79,5 +85,5 @@ export function buildTree(model, tableUuid) {
     
     addNodes(tree);
     
-    return { treeView, firstItem };
+    return treeView;
 }

@@ -94,7 +94,7 @@ const IEditToggleBox = (instance) => ({
             // instance.leftSection.style.display = 'none';
             // instance.centerSection.style.display = 'none';
             // instance.rightSection.style.display = 'none';
-            instance.shadow.querySelectorAll('.section-label').forEach(label => {
+            instance.shadow.querySelectorAll('.section span').forEach(label => {
                 label.style.display = 'none';
             });
 
@@ -109,7 +109,7 @@ const IEditToggleBox = (instance) => ({
             }
 
             // Show all section labels
-            instance.shadow.querySelectorAll('.section-label').forEach(label => {
+            instance.shadow.querySelectorAll('.section span').forEach(label => {
                 label.style.display = '';
             });
         });

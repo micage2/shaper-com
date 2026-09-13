@@ -5,13 +5,12 @@ class Table {
     constructor(uuid, name) {
         this.uuid = uuid;
         this.name = name;
-        this.columns = new Map();  // colId -> Column
-        this.rows = new Map();      // rowId -> Row
+        this.columns = new Map();
+        this.rows = new Map();
         this.nextRowId = 0;
         this.eventHandlers = new Map();
     }
     
-    // === Events ===
     on(event, handler) {
         if (!this.eventHandlers.has(event)) {
             this.eventHandlers.set(event, new Set());
@@ -34,47 +33,18 @@ class Table {
         }
     }
     
-    // === Column operations ===
-    forColumns(predicate) {
+    forColumns(callback) {
         for (const col of this.columns.values()) {
-            if (predicate(col, this)) return col;
+            if (callback(col, this)) return col;
         }
         return null;
     }
-
-    addColumn({name, type, targetTableUuid = null}) {
-        for (const col of this.columns.values()) {
-            if (col.name === name) {
-                console.error(`[Table ${this.name}] Column '${name}' already exists`);
-                return false;
-            }
-        }
-        
-        if (![1, 2, 3, 42].includes(type)) {
-            console.error(`[Table ${this.name}] Invalid column type: ${type}`);
-            return false;
-        }
-        
-        if (type === 42 && !targetTableUuid) {
-            console.error(`[Table ${this.name}] Link column '${name}' requires targetTableUuid`);
-            return false;
-        }
-        
-        const column = new Column(name, type, targetTableUuid);
-        this.columns.set(column.colId, column);
-        
+    
+    forRows(callback) {
         for (const row of this.rows.values()) {
-            row.data[column.colId] = column.defaultValue;
+            if (callback(row, this)) return row;
         }
-        
-        this.emit('column-added', {
-            colId: column.colId,
-            columnName: column.name,
-            type: column.type,
-            targetTableUuid: column.targetTableUuid
-        });
-        
-        return column;
+        return null;
     }
     
     removeColumn(colId) {
@@ -91,6 +61,7 @@ class Table {
         }
         
         this.emit('column-removed', {
+            tableUuid: this.uuid,
             colId: colId,
             columnName: column.name
         });
@@ -116,6 +87,7 @@ class Table {
         column.name = newName;
         
         this.emit('column-renamed', {
+            tableUuid: this.uuid,
             colId: colId,
             oldName: oldName,
             newName: newName
@@ -125,9 +97,7 @@ class Table {
     }
     
     swapColumns(colId1, colId2) {
-        if (!this.columns.has(colId1) || !this.columns.has(colId2)) {
-            return false;
-        }
+        if (!this.columns.has(colId1) || !this.columns.has(colId2)) return false;
         
         const entries = Array.from(this.columns.entries());
         const idx1 = entries.findIndex(([id]) => id === colId1);
@@ -138,6 +108,7 @@ class Table {
         this.columns = new Map(entries);
         
         this.emit('column-swapped', {
+            tableUuid: this.uuid,
             colId1: colId1,
             colId2: colId2
         });
@@ -145,14 +116,6 @@ class Table {
         return true;
     }
     
-    // === Row operations ===
-    forRows(predicate) {
-        for (const row of this.rows.values()) {
-            if (predicate(row, this)) return row;
-        }
-        return null;
-    }
-
     addRow(rowData = {}) {
         const data = {};
         
@@ -172,15 +135,17 @@ class Table {
         this.rows.set(row.id, row);
         
         this.emit('row-added', {
+            tableUuid: this.uuid,
             rowId: row.id,
-            rowData: {...row.data}
+            rowData: { ...row.data }
         });
         
         return row;
     }
     
     deleteRow(rowId) {
-        if (this.rows.delete(rowId)) {
+        if (this.rows.has(rowId)) {
+            this.rows.delete(rowId);
             this.emit('row-deleted', {
                 tableUuid: this.uuid,
                 rowId: rowId
@@ -240,7 +205,6 @@ class Table {
         return row.data[colId];
     }
     
-    // === Serialization ===
     toJSON() {
         return {
             uuid: this.uuid,

@@ -34,87 +34,6 @@ function register(ctor, roleCollector, info = {}) {
     return true;
 }
 
-function __1validateScheme(scheme, data, path = '') {
-    const errors = [];
-    for (const [key, spec] of Object.entries(scheme)) {
-        const value = data?.[key];
-        const fullPath = path ? `${path}.${key}` : key;
-        
-        if (value === undefined || value === null) {
-            errors.push(`Missing or null: ${fullPath}`);
-            continue;
-        }
-        
-        const expectedType = typeof spec === 'string' ? spec : typeof spec;
-        
-        if (typeof expectedType === 'object' && !Array.isArray(expectedType)) {
-            errors.push(...validateScheme(expectedType, value, fullPath));
-        } else if (expectedType === 'array') {
-            if (!Array.isArray(value)) errors.push(`${fullPath} should be array`);
-        } else if (typeof value !== expectedType) {
-            errors.push(`${fullPath} should be ${expectedType}, got ${typeof value}`);
-        }
-        
-        if (typeof spec === 'object' && spec.validator) {
-            if (!spec.validator(value)) {
-                errors.push(`${fullPath} failed validation`);
-            }
-        }
-    }
-    return errors;
-}
-
-function __2validateScheme(scheme, data, path = '') {
-    const errors = [];
-    const stack = [{ scheme, data, path }];
-    
-    while (stack.length > 0) {
-        const { scheme: currentScheme, data: currentData, path: currentPath } = stack.pop();
-        
-        for (const [key, spec] of Object.entries(currentScheme)) {
-            const value = currentData?.[key];
-            const fullPath = currentPath ? `${currentPath}.${key}` : key;
-            
-            if (value === undefined || value === null) {
-                const isRequired = typeof spec === 'object' && spec.required === true;
-                if (isRequired) {
-                    errors.push(`Missing or null: ${fullPath}`);
-                }
-                continue;
-            }
-            
-            if (typeof spec === 'string') {
-                const expectedType = spec;
-                if (expectedType === 'array' && !Array.isArray(value)) {
-                    errors.push(`${fullPath} should be array`);
-                } else if (expectedType !== 'array' && typeof value !== expectedType) {
-                    errors.push(`${fullPath} should be ${expectedType}, got ${typeof value}`);
-                }
-            } else if (typeof spec === 'object') {
-                // Nested scheme or spec with type
-                if (spec.type) {
-                    const expectedType = spec.type;
-                    if (expectedType === 'array' && !Array.isArray(value)) {
-                        errors.push(`${fullPath} should be array`);
-                    } else if (expectedType !== 'array' && typeof value !== expectedType) {
-                        errors.push(`${fullPath} should be ${expectedType}, got ${typeof value}`);
-                    }
-                }
-                
-                if (spec.validator && !spec.validator(value)) {
-                    errors.push(`${fullPath} failed validation`);
-                }
-                
-                if (spec.scheme && typeof value === 'object') {
-                    stack.push({ scheme: spec.scheme, data: value, path: fullPath });
-                }
-            }
-        }
-    }
-    
-    return errors;
-}
-
 function validateScheme(scheme, data, path = '') {
     const errors = [];
     const stack = [{ scheme, data, path }];
@@ -331,6 +250,8 @@ function attach(sourceIface, targetIface, options = {}) {
             console.warn(`[DOM.attach] Invalid mode: ${options.mode}`);
             return false;
     }
+
+    sourceIface.emit('mounted');
     
     return true;
 }
@@ -343,6 +264,9 @@ function detach(iface) {
     if (!host || !host.parentNode) return false;
     
     host.parentNode.removeChild(host);
+
+    iface.emit('unmounted');
+
     return true;
 }
 

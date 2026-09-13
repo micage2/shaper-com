@@ -51,19 +51,15 @@ function ctor(args = {}) {
         shadow
     };
     
-    // Document click listener for click-away detection
-    document.addEventListener('click', function clickHandler(e) {
+    document.addEventListener('mousedown', (e) => {
         if (instance.activeToggle) {
-            const wrapper = instance.wrappers.get(instance.activeToggle);
-            if (wrapper) {
-                const path = e.composedPath();
-                if (!path.includes(wrapper)) {
-                    instance.activeToggle.showIdle();
-                }
+            const path = e.composedPath();
+            if (!path.includes(host)) {
+                instance.activeToggle.showIdle();
             }
         }
     });
-    
+
     return {
         getHost() { return host; },
         getInstance() { return instance; }
@@ -104,6 +100,10 @@ const IEditToggleBox = (instance) => ({
                     w.style.display = 'none';
                 }
             }
+
+            instance.shadow.querySelectorAll('.section span').forEach(label => {
+                label.style.display = 'none';
+            });
         });
         
         toggle.on('idle', () => {
@@ -113,6 +113,10 @@ const IEditToggleBox = (instance) => ({
             for (const w of instance.wrappers.values()) {
                 w.style.display = '';
             }
+
+            instance.shadow.querySelectorAll('.section span').forEach(label => {
+                label.style.display = '';
+            });
         });
         
         idle?.on('close', (data) => {
