@@ -5,6 +5,19 @@ function ctor(args = {}) {
     
     const host = document.createElement('div');
     host.style.cssText = 'display:flex !important; flex-direction:column !important; width:100% !important; height:100% !important; overflow-y:auto !important; overflow-x:hidden !important; box-sizing:border-box !important;';
+
+    const caption = document.createElement('div');
+    const caption_text =  document.createElement('span');
+    caption.style.cssText = `
+        height: 44px; 
+        text-align: center; 
+        padding: 8px; 
+        font-size: 22px;
+        border-bottom: 1px solid #ccd;
+    `;
+    caption_text.textContent = args.caption;
+    caption.appendChild(caption_text);
+    host.appendChild(caption);
     
     const fields = new Map();
     
@@ -13,7 +26,14 @@ function ctor(args = {}) {
         field.style.cssText = 'display:flex; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;';
         
         const label = document.createElement('span');
-        label.style.cssText = 'flex:0 0 120px; font-size:13px; color:#333; font-family: Segoe UI, Arial, sans-serif;';
+        label.style.cssText = `
+            flex:0 0 120px; 
+            font-size:13px;
+            color:#333;
+            font-family: Segoe UI, Arial, sans-serif;
+            padding: 6px 8px;
+            text-align: right;
+        `;
         label.textContent = name;
         field.appendChild(label);
         
@@ -123,7 +143,10 @@ const IPropertyView = (instance) => ({
 const info = {
     clsid: 'jscom.dom-comps.property-view',
     name: 'PropertyView',
-    description: 'Dynamic container of property fields'
+    description: 'Dynamic container of property fields',
+    scheme: {
+        caption: { type: 'string', required: true }
+    }
 };
 
 DOM.register(ctor, (role) => {

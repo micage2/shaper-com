@@ -432,11 +432,10 @@ function DeletePropertyDialog(args) {
 
 // buildProps
 function buildProps(model, tableUuid, rowId) {
-    const propView = DOM.create(PropertyView, {});
-    if (!propView) return null;
-    
     const table = model.getTable(tableUuid);
-    if (!table) return propView;
+    if (!table) return DOM.create(PropertyView, { caption: "No table selected" });
+    
+    const propView = DOM.create(PropertyView, { caption: table.name });
     
     table.on('column-added', function(data) {
         if (data.tableUuid !== tableUuid) return;
