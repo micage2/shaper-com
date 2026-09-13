@@ -23,7 +23,14 @@ function ctor(args = {}) {
     
     function createField(name, cell) {
         const field = document.createElement('div');
-        field.style.cssText = 'display:flex; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;';
+        field.style.cssText = `
+            display:flex;
+            width: 100%;
+            height: 40px;
+            align-items:center; 
+            padding:0px 0px; 
+            border-bottom:1px solid #eee;
+        `;
         
         const label = document.createElement('span');
         label.style.cssText = `
@@ -31,14 +38,18 @@ function ctor(args = {}) {
             font-size:13px;
             color:#333;
             font-family: Segoe UI, Arial, sans-serif;
-            padding: 6px 8px;
+            padding: 6px 12px;
             text-align: right;
+            user-select: none;
         `;
-        label.textContent = name;
+        label.textContent = name + ':';
         field.appendChild(label);
         
         const valueContainer = document.createElement('div');
-        valueContainer.style.cssText = 'flex:1;';
+        valueContainer.style.cssText = `
+            height: 100%;
+            flex:1;
+        `;
         field.appendChild(valueContainer);
         
         fields.set(name, { field, cell });
@@ -90,6 +101,14 @@ const IPropertyView = (instance) => ({
                 child.value = String(prop.value);
             }
         }
+
+        child.style.cssText = `
+            width: 100%;
+            height: 100%;
+            border: 0;
+            text-align: left;
+        `;
+        if (prop.type === 3) child.style.width = '';
         
         child.addEventListener('change', () => {
             const oldValue = prop.value;

@@ -39,21 +39,21 @@ export function getTableIcon(model, tableUuid) {
     return icons[table.name] || '📄';
 }
 
-export function addTreeNode(model, treeView, node, parent) {
+export function addTreeNode(model, treeView, row, parent) {
     if (parent) {
         treeView.select(parent, true);
     } else {
         treeView.select(null, true);
     }
     
-    const table = model.getTable(node.data.tableUuid);
+    const table = model.getTable(row.tableUuid);
     const tableName = table ? table.name : '';
     
     return treeView.add({
-        label: getRowLabel(model, node.data.tableUuid, node.data.rowId),
-        icon: getTableIcon(model, node.data.tableUuid),
+        label: getRowLabel(model, row.tableUuid, row.rowId),
+        icon: getTableIcon(model, row.tableUuid),
         type: 'folder',
-        data: node.data
+        data: row
     });
 }
 
@@ -72,7 +72,7 @@ export function buildTree(model, tableUuid) {
         while (stack.length > 0) {
             const { node, parent } = stack.pop();
 
-            const item = addTreeNode(model, treeView, node, parent);
+            const item = addTreeNode(model, treeView, node.data, parent);
             
             if (node.children && node.children.length > 0) {
                 treeView.select(item, true);

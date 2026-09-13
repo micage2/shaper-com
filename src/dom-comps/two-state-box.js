@@ -17,7 +17,7 @@ function ctor(args = {}) {
                 width: 100%;
                 // padding: 4px 8px;
                 box-sizing: border-box;
-                background: #f5f5f5;
+                background: #6183be;
                 border-bottom: 1px solid #ccc;
             }
             .sections {

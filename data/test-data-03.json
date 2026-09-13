@@ -10,12 +10,12 @@
           {"colId": "c4j1k2l3", "name": "country", "type": 42, "targetTableUuid": "33333333-3333-3333-3333-333333333333"}
         ],
         "rows": [
-          {"id": 0, "data": {"c1a1b2c3": "Berlin", "c2d4e5f6": 3645000, "c3g7h8i9": true, "c4j1k2l3": 0}, "refCount": 1},
-          {"id": 1, "data": {"c1a1b2c3": "Hamburg", "c2d4e5f6": 1841000, "c3g7h8i9": false, "c4j1k2l3": 0}, "refCount": 1},
-          {"id": 2, "data": {"c1a1b2c3": "Munich", "c2d4e5f6": 1472000, "c3g7h8i9": false, "c4j1k2l3": 0}, "refCount": 1},
-          {"id": 3, "data": {"c1a1b2c3": "Vienna", "c2d4e5f6": 1897000, "c3g7h8i9": true, "c4j1k2l3": 1}, "refCount": 1},
-          {"id": 4, "data": {"c1a1b2c3": "Salzburg", "c2d4e5f6": 154000, "c3g7h8i9": false, "c4j1k2l3": 1}, "refCount": 1},
-          {"id": 5, "data": {"c1a1b2c3": "Zurich", "c2d4e5f6": 402000, "c3g7h8i9": false, "c4j1k2l3": 2}, "refCount": 1}
+          {"id": 0, "data": {"c1a1b2c3": "Berlin", "c2d4e5f6": 3645000, "c3g7h8i9": true, "c4j1k2l3": 0}},
+          {"id": 1, "data": {"c1a1b2c3": "Hamburg", "c2d4e5f6": 1841000, "c3g7h8i9": false, "c4j1k2l3": 0}},
+          {"id": 2, "data": {"c1a1b2c3": "Munich", "c2d4e5f6": 1472000, "c3g7h8i9": false, "c4j1k2l3": 0}},
+          {"id": 3, "data": {"c1a1b2c3": "Vienna", "c2d4e5f6": 1897000, "c3g7h8i9": true, "c4j1k2l3": 1}},
+          {"id": 4, "data": {"c1a1b2c3": "Salzburg", "c2d4e5f6": 154000, "c3g7h8i9": false, "c4j1k2l3": 1}},
+          {"id": 5, "data": {"c1a1b2c3": "Zurich", "c2d4e5f6": 402000, "c3g7h8i9": false, "c4j1k2l3": 2}}
         ]
       },
       {
@@ -28,12 +28,12 @@
           {"colId": "b4j2k3l4", "name": "isOpen", "type": 3}
         ],
         "rows": [
-          {"id": 0, "data": {"b1a2b3c4": "Fernsehturm", "b2d5e6f7": 0, "b3g8h9i1": 1969, "b4j2k3l4": true}, "refCount": 1},
-          {"id": 1, "data": {"b1a2b3c4": "Brandenburger Tor", "b2d5e6f7": 0, "b3g8h9i1": 1791, "b4j2k3l4": true}, "refCount": 1},
-          {"id": 2, "data": {"b1a2b3c4": "Elbphilharmonie", "b2d5e6f7": 1, "b3g8h9i1": 2016, "b4j2k3l4": true}, "refCount": 1},
-          {"id": 3, "data": {"b1a2b3c4": "Frauenkirche", "b2d5e6f7": 2, "b3g8h9i1": 1488, "b4j2k3l4": true}, "refCount": 1},
-          {"id": 4, "data": {"b1a2b3c4": "Stephansdom", "b2d5e6f7": 3, "b3g8h9i1": 1160, "b4j2k3l4": true}, "refCount": 1},
-          {"id": 5, "data": {"b1a2b3c4": "Grossmünster", "b2d5e6f7": 5, "b3g8h9i1": 1220, "b4j2k3l4": true}, "refCount": 1}
+          {"id": 0, "data": {"b1a2b3c4": "Fernsehturm", "b2d5e6f7": 0, "b3g8h9i1": 1969, "b4j2k3l4": true}},
+          {"id": 1, "data": {"b1a2b3c4": "Brandenburger Tor", "b2d5e6f7": 0, "b3g8h9i1": 1791, "b4j2k3l4": true}},
+          {"id": 2, "data": {"b1a2b3c4": "Elbphilharmonie", "b2d5e6f7": 1, "b3g8h9i1": 2016, "b4j2k3l4": true}},
+          {"id": 3, "data": {"b1a2b3c4": "Frauenkirche", "b2d5e6f7": 2, "b3g8h9i1": 1488, "b4j2k3l4": true}},
+          {"id": 4, "data": {"b1a2b3c4": "Stephansdom", "b2d5e6f7": 3, "b3g8h9i1": 1160, "b4j2k3l4": true}},
+          {"id": 5, "data": {"b1a2b3c4": "Grossmünster", "b2d5e6f7": 5, "b3g8h9i1": 1220, "b4j2k3l4": true}}
         ]
       },
       {
@@ -45,9 +45,9 @@
           {"colId": "co3g6h7i", "name": "population", "type": 2}
         ],
         "rows": [
-          {"id": 0, "data": {"co1a2b3c": "Germany", "co2d4e5f": "Europe", "co3g6h7i": 83100000}, "refCount": 1},
-          {"id": 1, "data": {"co1a2b3c": "Austria", "co2d4e5f": "Europe", "co3g6h7i": 8900000}, "refCount": 1},
-          {"id": 2, "data": {"co1a2b3c": "Switzerland", "co2d4e5f": "Europe", "co3g6h7i": 8600000}, "refCount": 1}
+          {"id": 0, "data": {"co1a2b3c": "Germany", "co2d4e5f": "Europe", "co3g6h7i": 83100000}},
+          {"id": 1, "data": {"co1a2b3c": "Austria", "co2d4e5f": "Europe", "co3g6h7i": 8900000}},
+          {"id": 2, "data": {"co1a2b3c": "Switzerland", "co2d4e5f": "Europe", "co3g6h7i": 8600000}}
         ]
       },
       {
@@ -60,10 +60,10 @@
           {"colId": "p4j2k3l4", "name": "isArchitect", "type": 3}
         ],
         "rows": [
-          {"id": 0, "data": {"p1a2b3c4": "Karl Friedrich Schinkel", "p2d5e6f7": 60, "p3g8h9i1": 0, "p4j2k3l4": true}, "refCount": 1},
-          {"id": 1, "data": {"p1a2b3c4": "Fritz Höger", "p2d5e6f7": 72, "p3g8h9i1": 1, "p4j2k3l4": true}, "refCount": 1},
-          {"id": 2, "data": {"p1a2b3c4": "Friedensreich Hundertwasser", "p2d5e6f7": 71, "p3g8h9i1": 3, "p4j2k3l4": true}, "refCount": 1},
-          {"id": 3, "data": {"p1a2b3c4": "Angela Merkel", "p2d5e6f7": 69, "p3g8h9i1": 0, "p4j2k3l4": false}, "refCount": 1}
+          {"id": 0, "data": {"p1a2b3c4": "Karl Friedrich Schinkel", "p2d5e6f7": 60, "p3g8h9i1": 0, "p4j2k3l4": true}},
+          {"id": 1, "data": {"p1a2b3c4": "Fritz Höger", "p2d5e6f7": 72, "p3g8h9i1": 1, "p4j2k3l4": true}},
+          {"id": 2, "data": {"p1a2b3c4": "Friedensreich Hundertwasser", "p2d5e6f7": 71, "p3g8h9i1": 3, "p4j2k3l4": true}},
+          {"id": 3, "data": {"p1a2b3c4": "Angela Merkel", "p2d5e6f7": 69, "p3g8h9i1": 0, "p4j2k3l4": false}}
         ]
       },
       {
@@ -75,9 +75,9 @@
           {"colId": "a3h8i9j1", "name": "role", "type": 1}
         ],
         "rows": [
-          {"id": 0, "data": {"a1b2c3d4": 0, "a2e5f6g7": 1, "a3h8i9j1": "lead architect"}, "refCount": 1},
-          {"id": 1, "data": {"a1b2c3d4": 1, "a2e5f6g7": 2, "a3h8i9j1": "lead architect"}, "refCount": 1},
-          {"id": 2, "data": {"a1b2c3d4": 2, "a2e5f6g7": 4, "a3h8i9j1": "consultant"}, "refCount": 1}
+          {"id": 0, "data": {"a1b2c3d4": 0, "a2e5f6g7": 1, "a3h8i9j1": "lead architect"}},
+          {"id": 1, "data": {"a1b2c3d4": 1, "a2e5f6g7": 2, "a3h8i9j1": "lead architect"}},
+          {"id": 2, "data": {"a1b2c3d4": 2, "a2e5f6g7": 4, "a3h8i9j1": "consultant"}}
         ]
       }
     ]

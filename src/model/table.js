@@ -116,7 +116,7 @@ class Table {
         return true;
     }
     
-    addRow(rowData = {}) {
+    _addRow(rowData = {}) {
         const data = {};
         
         for (const column of this.columns.values()) {

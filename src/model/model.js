@@ -138,6 +138,31 @@ class Model {
         
         return column;
     }
+
+    addRow(tableUuid, rowData = {}) {
+        const table = this.getTable(tableUuid);
+        if (!table) return null;
+        
+        const row = table._addRow(rowData);
+        
+        // Set default link values for any remaining null links
+        for (const column of table.columns.values()) {
+            if (column.type === 42) {
+                const current = row.data[column.colId];
+                if (current === null || current === undefined) {
+                    const targetTable = this.getTable(column.targetTableUuid);
+                    if (targetTable) {
+                        const firstTargetRow = targetTable.forRows(() => true);
+                        if (firstTargetRow) {
+                            table.setCell(row.id, column.colId, firstTargetRow.id);
+                        }
+                    }
+                }
+            }
+        }
+        
+        return row;
+    }
     
     findChildren(tableUuid, rowId) {
         const children = [];

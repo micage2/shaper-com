@@ -1,9 +1,10 @@
-
 <div class="container">
     <div class="pane left-pane">
         <slot name="left"></slot>
     </div>
-    <div class="divider"></div>
+    <div class="divider">
+        <div class="thumb"></div>
+    </div>
     <div class="pane right-pane">
         <slot name="right"></slot>
     </div>
@@ -14,22 +15,41 @@
         width: 100%;
         height: 100%;
     }
+
     .container {
         display: flex;
         width: 100%;
         height: 100%;
     }
-    .left-pane, .right-pane {
+
+    .left-pane,
+    .right-pane {
         overflow: hidden;
         position: relative;
     }
+
     .divider {
-        width: 4px;
+        width: 1px;
+        background: #ddd;
         cursor: col-resize;
-        background: #ccc;
+        position: relative;
         flex-shrink: 0;
     }
-    .divider:hover, .divider.dragging {
-        background: #999;
+
+    .thumb {
+        position: absolute;
+        width: 4px;
+        right: -2px;
+        height: 100%;
+        top: 0;
+        background: #7a9bc7;
+        opacity: 0;
+        z-index: 21;
+    }
+
+    .divider:hover .thumb,
+    .divider.dragging .thumb {
+        opacity: 1;
+        transition: opacity 0.3s ease 0.2s;
     }
 </style>

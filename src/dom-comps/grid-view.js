@@ -26,6 +26,9 @@ function ctor(args = {}) {
     const columns = new Map();
     const rowCells = new Map();
     
+    let sortColumn = '__index__';
+    let sortDirection = 'asc';
+    
     function createSimpleCell(text, cssClass = '') {
         const cell = document.createElement('div');
         cell.className = cssClass || 'cell-simple';
@@ -58,6 +61,16 @@ function ctor(args = {}) {
         return cell;
     }
     
+    function createSortButton(colId) {
+        const btn = document.createElement('button');
+        btn.className = 'sort-btn';
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            cycleSort(colId);
+        });
+        return btn;
+    }
+    
     function buildDeleteColumn() {
         const column = document.createElement('div');
         column.className = 'column';
@@ -84,8 +97,19 @@ function ctor(args = {}) {
         column.style.minWidth = '40px';
         column.style.width = '40px';
         
-        const header = createSimpleCell('#', 'cell-header');
+        const header = document.createElement('div');
+        header.className = 'cell-header';
         header.style.justifyContent = 'center';
+        
+        const label = document.createElement('span');
+        label.className = 'col-label';
+        label.textContent = '#';
+        label.style.textAlign = 'center';
+        header.appendChild(label);
+        
+        const sortBtn = createSortButton('__index__');
+        header.appendChild(sortBtn);
+        
         column.appendChild(header);
         
         let index = 0;
@@ -96,16 +120,26 @@ function ctor(args = {}) {
         });
         
         grid.appendChild(column);
-        columns.set('__index__', { column });
+        columns.set('__index__', { column, sortBtn });
     }
     
     function buildDataColumn(col) {
         const column = document.createElement('div');
         column.className = 'column';
         
-        const header = createSimpleCell(col.name, 'cell-header');
-        if (col.type === 2) header.style.justifyContent = 'flex-end';
-        else if (col.type === 3) header.style.justifyContent = 'center';
+        const header = document.createElement('div');
+        header.className = 'cell-header';
+        
+        const label = document.createElement('span');
+        label.className = 'col-label';
+        label.textContent = col.name;
+        if (col.type === 2) label.style.textAlign = 'right';
+        else if (col.type === 3) label.style.textAlign = 'center';
+        header.appendChild(label);
+        
+        const sortBtn = createSortButton(col.colId);
+        header.appendChild(sortBtn);
+        
         column.appendChild(header);
         
         const slot = document.createElement('slot');
@@ -118,7 +152,28 @@ function ctor(args = {}) {
         column.appendChild(resizer);
         
         grid.appendChild(column);
-        columns.set(col.colId, { column, slot, col });
+        columns.set(col.colId, { column, slot, col, sortBtn });
+    }
+    
+    function buildDummyColumn() {
+        const column = document.createElement('div');
+        column.className = 'column';
+        column.style.flex = '1';
+        column.style.minWidth = '120px';
+        
+        const header = document.createElement('div');
+        header.className = 'cell-header';
+        column.appendChild(header);
+        
+        table.forRows((row) => {
+            const cell = document.createElement('div');
+            cell.className = 'cell-simple';
+            column.appendChild(cell);
+            addCell(row.id, '__dummy__', { element: cell });
+        });
+        
+        grid.appendChild(column);
+        columns.set('__dummy__', { column });
     }
     
     function startResize(e, column) {
@@ -141,6 +196,96 @@ function ctor(args = {}) {
         
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
+    }
+    
+    function cycleSort(colId) {
+        if (sortColumn === colId) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortColumn = colId;
+            sortDirection = 'asc';
+        }
+        
+        updateSortButtons();
+        applySortOrder(self);
+    }
+    
+    function updateSortButtons() {
+        for (const [colId, entry] of columns) {
+            if (!entry.sortBtn) continue;
+            if (colId === sortColumn) {
+                entry.sortBtn.classList.add('active');
+                entry.sortBtn.textContent = sortDirection === 'asc' ? '▲' : '▼';
+            } else {
+                entry.sortBtn.classList.remove('active');
+                entry.sortBtn.textContent = '↕';
+            }
+        }
+    }
+    
+    function getSortedRowIds() {
+        const rowIds = [];
+        table.forRows((row) => { rowIds.push(row.id); });
+        
+        rowIds.sort((a, b) => {
+            let valA, valB;
+            
+            if (sortColumn === '__index__') {
+                valA = a;
+                valB = b;
+            } else {
+                const column = table.forColumns(col => col.colId === sortColumn);
+                valA = table.getCell(a, sortColumn);
+                valB = table.getCell(b, sortColumn);
+                
+                if (column && column.type === 42) {
+                    valA = getRowLabel(model, column.targetTableUuid, valA);
+                    valB = getRowLabel(model, column.targetTableUuid, valB);
+                }
+            }
+            
+            if (valA === valB) return 0;
+            const cmp = valA < valB ? -1 : 1;
+            return sortDirection === 'asc' ? cmp : -cmp;
+        });
+        
+        return rowIds;
+    }
+    
+    function applySortOrder(iface) {
+        const sortedRowIds = getSortedRowIds();
+        
+        for (const key of ['__delete__', '__index__', '__dummy__']) {
+            const entry = columns.get(key);
+            if (!entry) continue;
+            
+            const cellElements = [];
+            for (const rowId of sortedRowIds) {
+                const rowEntry = rowCells.get(rowId);
+                if (rowEntry && rowEntry.has(key)) {
+                    cellElements.push(rowEntry.get(key).element);
+                }
+            }
+            
+            for (const cell of cellElements) cell.remove();
+            for (const cell of cellElements) entry.column.appendChild(cell);
+        }
+        
+        table.forColumns((col) => {
+            const entry = columns.get(col.colId);
+            if (!entry || !entry.slot) return;
+            
+            const cellViewIfaces = [];
+            for (const rowId of sortedRowIds) {
+                const rowEntry = rowCells.get(rowId);
+                if (rowEntry && rowEntry.has(col.colId)) {
+                    cellViewIfaces.push(rowEntry.get(col.colId).iface);
+                }
+            }
+            
+            for (const cv of cellViewIfaces) DOM.detach(cv);
+            for (const cv of cellViewIfaces) DOM.attach(cv, iface, { slot: entry.slot.name });
+        });
     }
     
     function updateIndexColumn() {
@@ -187,12 +332,13 @@ function ctor(args = {}) {
         });
     }
     
-    // Build initial structure
     buildDeleteColumn();
     buildIndexColumn();
     table.forColumns((col) => buildDataColumn(col));
+    buildDummyColumn();
     
-    // Row added
+    updateSortButtons();
+    
     table.on('row-added', (data) => {
         const rowId = data.rowId;
         
@@ -211,10 +357,17 @@ function ctor(args = {}) {
             updateIndexColumn();
         }
         
+        const dummyEntry = columns.get('__dummy__');
+        if (dummyEntry) {
+            const cell = document.createElement('div');
+            cell.className = 'cell-simple';
+            dummyEntry.column.appendChild(cell);
+            addCell(rowId, '__dummy__', { element: cell });
+        }
+        
         table.forColumns((col) => addCellsToColumn(self, rowId, col));
     });
     
-    // Row deleted
     table.on('row-deleted', (data) => {
         const rowId = data.rowId;
         const cells = rowCells.get(rowId);
@@ -233,17 +386,49 @@ function ctor(args = {}) {
         updateIndexColumn();
     });
     
-    // Column added
     table.on('column-added', (data) => {
         const col = table.forColumns(c => c.colId === data.colId);
         if (!col) return;
         
-        buildDataColumn(col);
+        const dummyEntry = columns.get('__dummy__');
+        const column = document.createElement('div');
+        column.className = 'column';
+        
+        const header = document.createElement('div');
+        header.className = 'cell-header';
+        
+        const label = document.createElement('span');
+        label.className = 'col-label';
+        label.textContent = col.name;
+        if (col.type === 2) label.style.textAlign = 'right';
+        else if (col.type === 3) label.style.textAlign = 'center';
+        header.appendChild(label);
+        
+        const sortBtn = createSortButton(col.colId);
+        header.appendChild(sortBtn);
+        
+        column.appendChild(header);
+        
+        const slot = document.createElement('slot');
+        slot.name = `col-${col.colId}`;
+        column.appendChild(slot);
+        
+        const resizer = document.createElement('div');
+        resizer.className = 'resizer';
+        resizer.addEventListener('mousedown', (e) => startResize(e, column));
+        column.appendChild(resizer);
+        
+        if (dummyEntry) {
+            grid.insertBefore(column, dummyEntry.column);
+        } else {
+            grid.appendChild(column);
+        }
+        
+        columns.set(col.colId, { column, slot, col, sortBtn });
         
         table.forRows((row) => addCellsToColumn(self, row.id, col));
     });
     
-    // Column removed
     table.on('column-removed', (data) => {
         const entry = columns.get(data.colId);
         if (entry) {

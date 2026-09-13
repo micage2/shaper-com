@@ -21,7 +21,7 @@ import PropertyViewTest from '../compounds/property-view-test.js';
 import EditToggleNew from '../compounds/edit-toggle-box-new-test.js';
 import ModelTreeTest from '../compounds/model-tree-test.js';
 import ModelViewTest from '../compounds/model-view-test.js';
-import ModelTreeEditor from '../compounds/model-tree-editor-5.js';
+import ModelTreeEditor from '../compounds/model-tree-editor-6.js';
 import FocusTest from '../compounds/focus-test.js';
 
 const $$ = DOM.create;

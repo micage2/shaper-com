@@ -476,11 +476,15 @@ export default function ModelTreeEditor(model) {
         console.error('[ModelTreeEditor] Model is required');
         return null;
     }
-
-    const mainTBS = DOM.create(TBS, { topHeight: 40 });
+    
+    // Layout
+    const rootTBS = DOM.create(TBS, { topHeight: 40 });
+    const appToolbar = DOM.create(Toolbar, {});
+    
     const mainTB = DOM.create(TB, {});
     const mainLR = DOM.create(LR, {});
-    const mainToolbar = DOM.create(Toolbar, {});
+    
+    const bottomTBS = DOM.create(TBS, { topHeight: 40 });
     const twoStateBox = DOM.create(TwoStateBox, {
         centerLabel: 'Instance:',
         rightLabel: 'Property:'
@@ -497,6 +501,7 @@ export default function ModelTreeEditor(model) {
         if (!tableUuid) {
             mainLR.setLeft(null);
             mainLR.setRight(null);
+            bottomTBS.setBottom(null);
             return;
         }
         
@@ -521,17 +526,16 @@ export default function ModelTreeEditor(model) {
                 if (nameColumn) {
                     table.setCell(data.rowId, nameColumn.colId, pkg.newLabel);
                 }
-            });            
+            });
             
             const rootTable = model.getTable(tableUuid);
             
             rootTable.on('row-added', function(row) {
                 const item = addTreeNode(model, treeView, row, null);
-                
                 if (!treeView.getSelected()) {
                     treeView.select(item);
                 }
-            });            
+            });
             
             rootTable.on('row-deleted', function(data) {
                 const selected = treeView.getSelected();
@@ -559,7 +563,7 @@ export default function ModelTreeEditor(model) {
                     if (data.oldValue === data.newValue) return;
                     const column = table.forColumns(col => col.colId === data.colId);
 
-                    if (column.type === 1) {
+                    if (column && column.type === 1) {
                         const item = treeView.find(it => {
                             const d = it.getData();
                             return d.tableUuid === data.tableUuid && d.rowId === data.rowId;
@@ -594,7 +598,6 @@ export default function ModelTreeEditor(model) {
             }
             
             mainLR.setLeft(treeView);
-            
             treeView.select(treeView.forItems(() => true));
         }
 
@@ -602,7 +605,7 @@ export default function ModelTreeEditor(model) {
             model: model,
             tableUuid: pkg.tableUuid
         });
-        mainTB.setBottom(gridView);
+        bottomTBS.setBottom(gridView);
         
         twoStateBox.setEdit('rename-type', RenameTypeDialog({ model, tableUuid }));
         twoStateBox.setEdit('delete-type', DeleteTypeDialog({ model, tableUuid }));
@@ -636,39 +639,22 @@ export default function ModelTreeEditor(model) {
     
     // Add toggles to TwoStateBox
     twoStateBox.add('type-select', 'left', typeSelectDialog, null);
+    twoStateBox.add('add-type', 'left', IdleButtonDialog('+ Type'), AddTypeDialog({ model }));
+    twoStateBox.add('rename-type', 'left', IdleButtonDialog('Rename'), null);
+    twoStateBox.add('delete-type', 'left', IdleButtonDialog('Delete'), null);
+    twoStateBox.add('add-instance', 'center', IdleButtonDialog('+ Instance'), null);
+    twoStateBox.add('delete-instance', 'center', IdleButtonDialog('Delete'), null);
+    twoStateBox.add('add-property', 'right', IdleButtonDialog('+ Property'), null);
+    twoStateBox.add('delete-property', 'right', IdleButtonDialog('Delete'), null);
     
-    twoStateBox.add('add-type', 'left',
-        IdleButtonDialog('+ Type'),
-        AddTypeDialog({ model }));
-    
-    twoStateBox.add('rename-type', 'left',
-        IdleButtonDialog('Rename'),
-        null);
-    
-    twoStateBox.add('delete-type', 'left',
-        IdleButtonDialog('Delete'),
-        null);
-    
-    twoStateBox.add('add-instance', 'center',
-        IdleButtonDialog('+ Instance'),
-        null);
-    
-    twoStateBox.add('delete-instance', 'center',
-        IdleButtonDialog('Delete'),
-        null);
-    
-    twoStateBox.add('add-property', 'right',
-        IdleButtonDialog('+ Property'),
-        null);
-    
-    twoStateBox.add('delete-property', 'right',
-        IdleButtonDialog('Delete'),
-        null);
-    
-    // Assemble
-    mainTBS.setTop(twoStateBox);
-    mainTBS.setBottom(mainTB);
+    // Assemble layout
     mainTB.setTop(mainLR);
+    mainTB.setBottom(bottomTBS);
+    
+    bottomTBS.setTop(twoStateBox);
+    
+    rootTBS.setTop(appToolbar);
+    rootTBS.setBottom(mainTB);
     
     // Initial state
     const tables = Array.from(model.tables.values());
@@ -679,5 +665,5 @@ export default function ModelTreeEditor(model) {
         typeSelectDialog.emit('changed', { value: null });
     }
     
-    return mainTBS;
+    return rootTBS;
 }
