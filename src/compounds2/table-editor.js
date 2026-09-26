@@ -68,8 +68,8 @@ export default function TableEditor(db) {
         const iTable = {
             on: tbs.on,
             getRowNames: (uuid) => db.forRows(uuid),
-            confirmDeleteRow: (rowId) => {
-                tbs.emit('row-selected', rowId);
+            confirmDeleteRow: (row) => {
+                tbs.emit('row-selected', row);
                 deleteRowButton.click();
             },
             setCell: (colId, rowId, value) => db.setCell(currentUuid, rowId, colId, value),

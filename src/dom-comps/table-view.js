@@ -184,6 +184,11 @@ function ctor({hub: iTable, options = {}}) {
         return colElem;
     }
 
+    function findName(rowId) {
+        const col = Array.from(columns.values()).find(col => col.name === 'name');
+        return Array.from(col.cells.values()).find(c => c.rowId === rowId);
+    }
+
     /**
      * @param {Object} data
      * @property {Object} data.col
@@ -199,7 +204,11 @@ function ctor({hub: iTable, options = {}}) {
         if (col.type === 1000) {
             content = Button('🗑');
             content.onclick = (ev) => {
-                iTable.confirmDeleteRow(cell.rowId);
+                const ceLL = findName(cell.rowId);
+                iTable.confirmDeleteRow({
+                    name: ceLL.value,
+                    id: ceLL.rowId,
+                });
             };
         }
         else if (col.type === 999) {

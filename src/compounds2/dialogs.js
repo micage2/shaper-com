@@ -178,9 +178,9 @@ function DeleteRow(iRow) {
     iRow.on('table-selected', (table) => {
         currentTableUuid = table.uuid;
     });
-    iRow.on('row-selected', (rowId) => {
-        currentRowId = rowId;
-        label.setText(`Delete row ${currentRowId}?`);
+    iRow.on('row-selected', (row) => {
+        currentRowId = row.id;
+        label.setText(`Delete row ${row.name}?`);
     });
 
     const toolbar = DOM.create(Toolbar, {});
