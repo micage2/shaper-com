@@ -68,8 +68,9 @@ export default function TableEditor(db) {
         const iTable = {
             on: tbs.on,
             getRowNames: (uuid) => db.forRows(uuid),
-            doTheClick: () => { 
-                console.log('=======>>>  doTheClick');                
+            confirmDeleteRow: (rowId) => {
+                tbs.emit('row-selected', rowId);
+                deleteRowButton.click();
             },
             setCell: (colId, rowId, value) => db.setCell(currentUuid, rowId, colId, value),
         }
@@ -100,7 +101,8 @@ export default function TableEditor(db) {
 
     const iRow = {
         on: tbs.on.bind(tbs),
-        create: (currentTableUuid, { name }) => db.createRow(currentTableUuid, {name}),
+        createRow: ({ name }) => db.createRow(currentUuid, {name}),
+        deleteRow: (rowId) => db.deleteRow(currentUuid, rowId),
     };
 
     const iProperty = {
@@ -162,7 +164,9 @@ export default function TableEditor(db) {
     toggleBar.add('delete-type', 'left', Dialog.IdleButton('Delete'), Dialog.DeleteTable(iModel));
 
     toggleBar.add('add-row', 'center', Dialog.IdleButton('+ Row'), Dialog.AddRow(iRow));
-    toggleBar.add('delete-row', 'center', Dialog.IdleButton('Delete'), Dialog.DeleteRow(iRow));
+    const deleteRowButton = Dialog.IdleButton('Delete');
+    deleteRowButton.hide();
+    toggleBar.add('delete-row', 'center', deleteRowButton, Dialog.DeleteRow(iRow));
 
     toggleBar.add('add-property', 'right', Dialog.IdleButton('+ Column'), Dialog.AddColumn(iProperty));
     toggleBar.add('delete-property', 'right', Dialog.IdleButton('Delete'), Dialog.DeleteColumn(iProperty));

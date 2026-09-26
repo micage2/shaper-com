@@ -156,7 +156,7 @@ function AddRow(iface) {
     confirm.on('clicked', () => {
         const name = input.getValue().trim();
         if (name && currentTableUuid) {
-            iface.create(currentTableUuid, { name });
+            iface.createRow({ name });
         }
         toolbar.emit('close');
     });
@@ -172,12 +172,26 @@ function AddRow(iface) {
     return toolbar;
 }
 
-function DeleteRow(iface) {
+function DeleteRow(iRow) {
+    let currentTableUuid;
+    let currentRowId = null;
+    iRow.on('table-selected', (table) => {
+        currentTableUuid = table.uuid;
+    });
+    iRow.on('row-selected', (rowId) => {
+        currentRowId = rowId;
+        label.setText(`Delete row ${currentRowId}?`);
+    });
+
     const toolbar = DOM.create(Toolbar, {});
     const label = DOM.create(Label, { text: 'Delete Instance?' });
     
     const confirm = DOM.create(Button, { label: '✓' });
-    confirm.on('clicked', () => toolbar.emit('close'));
+    confirm.on('clicked', () => {
+        console.log('TODO:', '[DeleteRow] delete row', currentRowId);
+        iRow.deleteRow(currentRowId);
+        toolbar.emit('close');
+    });
     
     const cancel = DOM.create(Button, { label: '✗' });
     cancel.on('clicked', () => toolbar.emit('close'));

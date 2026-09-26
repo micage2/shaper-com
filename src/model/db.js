@@ -264,7 +264,7 @@ export default function Model() {
             if (col.type === 1) data[col.id] = '';
             else if (col.type === 2) data[col.id] = 0;
             else if (col.type === 3) data[col.id] = false;
-            else if (col.type === 42) data[col.id] = null;
+            else if (col.type === 42) data[col.id] = 0;
         }
         
         for (const [key, value] of Object.entries(rowData)) {

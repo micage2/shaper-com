@@ -121,10 +121,6 @@ function ctor({hub: iTable, options = {}}) {
 
     let rowCount = 1;
 
-    const onDeleteRow = (coords)  => {
-        console.log("TODO:", "[TableView] row delete", coords.rowIndex);        
-    }
-
     const onEditCell = (msg) => {
         console.log("[TableView] onEditCell", msg);
         const children = msg.elem.children;
@@ -149,7 +145,6 @@ function ctor({hub: iTable, options = {}}) {
         iTable,
         table,
         findTableCoords,
-        onDeleteRow,
         onEditCell,
         columns,
     };
@@ -214,8 +209,7 @@ function ctor({hub: iTable, options = {}}) {
         if (col.type === 1000) {
             content = Button('🗑');
             content.onclick = (ev) => {
-                const coords = findTableCoords(content.parentElement);
-                onDeleteRow(coords);
+                iTable.confirmDeleteRow(cell.rowId);
             };
         }
         else if (col.type === 999) {
@@ -251,6 +245,7 @@ function ctor({hub: iTable, options = {}}) {
 
             if (col.type === 2) {
                 input.type = 'number';
+                content.textContent = String(cell.value);
                 content.style.textAlign = 'right';
             }
         }
@@ -268,61 +263,6 @@ function ctor({hub: iTable, options = {}}) {
             content = Select(self, { value: cell.value, link: col.targetTableUuid });
         }
         
-        // switch (col.type) {
-        //     case 1000: // delete
-        //         content = Button('🗑');
-        //         content.onclick = (ev) => {
-        //             const coords = findTableCoords(content.parentElement);
-        //             onDeleteRow(coords);
-        //         };
-        //         break;
-        //     case 999: // index
-        //         content.textContent = cell.rowIndex;                
-        //         content.style.textAlign = 'center';
-        //         break;
-        //     case 111: // header
-        //         content.style.textAlign = 'center';
-        //         break;
-        //     case 1:
-        //         input = document.createElement('input');
-        //         input.value = cell.value;
-        //         input.addEventListener('change', (ev) => {
-        //             console.log('TODO', '[TableView] change', input);
-        //             if (input.value !== cell.value && input.value !== "") {
-        //                 self.iTable.setCell(col.id, cell.rowId, input.value);
-        //             }
-        //         });
-        //         input.addEventListener('blur', (ev) => {
-        //             input.style.display = 'none';
-        //             content.style.display = '';
-        //             if (input.value !== cell.value && input.value !== "") {
-        //                 self.iTable.setCell(col.id, cell.rowId, input.value);
-        //             }
-        //         });
-        //         input.style.display = 'none';
-        //         cellElem.appendChild(input);
-    
-        //         content.style.textAlign = 'left';
-        //         // break;
-        //     case 2:
-        //         input.type = 'number';
-        //         content.style.textAlign = 'right';
-        //         break;
-        //     case 3:
-        //         content = Input('checkbox'); // @ts-ignore
-        //         content.addEventListener('change', (ev) => {
-        //             // @ts-ignore
-        //             const value = content.checked;
-        //             self.iTable.setCell(col.id, cell.rowId, value);
-        //         });
-        //         // @ts-ignore
-        //         content.checked = typeof cell.value === 'boolean' ? cell.value : false;
-        //         break;
-        //     case 42:
-        //         // content = Select({ 1: '🍏  Apple', 2: '🍌  Banana', 3: '🍒  Cherry' });
-        //         content = Select(self, { value: cell.value, link: col.targetTableUuid });
-        //         break;
-        // }
         if (content) cellElem.appendChild(content);
         if (input) {
             cellElem.appendChild(input);
@@ -330,14 +270,6 @@ function ctor({hub: iTable, options = {}}) {
             input.style.border = '0px';
         }
     
-
-        // init edit mode on double click
-        // if (col.type === 1 || col.type === 2) {
-        //     cellElem.addEventListener('dblclick', (ev) => {
-        //         onEditCell({ elem: ev.currentTarget, cell });
-        //     });
-        // }
-
         return cellElem;
     }
 
@@ -384,7 +316,16 @@ function ctor({hub: iTable, options = {}}) {
     }));
 
     subs.push(iTable.on('row-deleted', (row) => {
-        console.log('[Hub -> TableView] row-deleted', row);
+        console.log('TODO:', '[TableView] on row-deleted', row);
+        const cellsToRemove = [];
+        columns.values().forEach(col => {
+            col.cells.entries().forEach(([cellElem, cell]) => {
+                if (cell.rowId === row.id) {
+                    cellElem.remove();
+                    col.cells.delete(cellElem);
+                }
+            });
+        });
         // TODO: find all cells and remove them
     }));
 

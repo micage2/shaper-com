@@ -23,24 +23,32 @@ function ctor(args = {}) {
     };
 }
 
-const IButton = (instance) => ({
+const IButton = ({host}) => ({
     setLabel(label) {
-        instance.host.textContent = label;
+        host.textContent = label;
         return this;
     },
     
     setActive(active) {
         if (active) {
-            instance.host.classList.add('active');
+            host.classList.add('active');
         } else {
-            instance.host.classList.remove('active');
+            host.classList.remove('active');
         }
         return this;
     },
     
     setEnabled(enabled) {
-        instance.host.disabled = !enabled;
+        host.disabled = !enabled;
         return this;
+    },
+
+    click() {
+        host.click();
+    },
+
+    hide() {
+        host.style.display = 'none';
     }
 });
 
