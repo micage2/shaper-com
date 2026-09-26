@@ -11,13 +11,16 @@ function ctor(args = {}) {
     const clone = fragment.cloneNode(true);
     shadow.appendChild(clone);
     
+    /** @type {HTMLDivElement} */
     const leftPane = shadow.querySelector('.left-pane');
+    /** @type {HTMLDivElement} */
     const rightPane = shadow.querySelector('.right-pane');
+    /** @type {HTMLDivElement} */
     const divider = shadow.querySelector('.divider');
     
     let ratio = args.ratio ?? 0.5;
-    const minLeft = args.minLeft || 100;
-    const minRight = args.minRight || 100;
+    const minLeft = args.minLeft || 0;
+    const minRight = args.minRight || 0;
     let isDragging = false;
     
     function update() {

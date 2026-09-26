@@ -43,7 +43,7 @@ export default function ModelEditor(hub) {
         right: LR({
             left: rootTBS, 
             right: Simple(),
-            ratio: .8
+            ratio: .7
         }),
         ratio: .2
     });
