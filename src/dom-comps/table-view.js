@@ -220,7 +220,7 @@ function ctor({hub: iTable, options = {}}) {
         }
         else if (col.type === 1 || col.type === 2) {
             input = document.createElement('input');
-            input.value = cell.value;
+            input.value = cell.value || '';
             // input.addEventListener('change', (ev) => {
             //     console.log('TODO', '[TableView] change', input);
             //     if (input.value !== cell.value && input.value !== "") {
@@ -254,8 +254,9 @@ function ctor({hub: iTable, options = {}}) {
             });
 
             if (col.type === 2) {
+                input.value = cell.value || 0;
                 input.type = 'number';
-                content.textContent = String(cell.value);
+                content.textContent = String(cell.value || 0);
                 content.style.textAlign = 'right';
             }
         }
