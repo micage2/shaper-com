@@ -1,0 +1,134 @@
+<style>
+    :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+    }
+
+    .table {
+        display: flex;
+        flex-direction: row;
+        min-width: 100%;
+        width: max-content;
+    }
+
+    .cell.col-header {
+        height: 40px;
+        border-bottom: 3px solid var(--border);
+        user-select: none;
+    }
+
+    .cell.col-header .ruler {
+        width: 0;
+        overflow: visible;
+    }
+
+    .ruler {
+        position: relative;
+    }
+
+    .ruler .thumb {
+        cursor: col-resize;
+        position: absolute;
+        height: 37px;
+        width: 6px;
+        background: transparent;
+        z-index: 21;
+        right: -3px;
+        opacity: 0;
+        transition: cursor opacity 50ms 100ms; /* 0ms duration, 150ms delay */
+    }
+    /*
+        transition: opacity 150ms ease-out; // Entry delay
+    */
+
+    .ruler .thumb:hover,
+    .ruler .thumb.dragging {
+        background: #27f;
+        opacity: .7; /* No transition on exit! */
+    }
+
+    .column {
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        min-width: 120px;
+    }
+
+    .column.x {
+        min-width: 40px;
+    }
+
+    .column.index {
+        min-width: 60px;
+    }
+
+    .column.dummy {
+        flex: 1;
+        min-width: 0px;
+    }
+
+    .cell {
+        height: 32px;
+        width: 100%;
+        min-height: 32px;
+        border-bottom: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        white-space: nowrap;
+        overflow: hidden;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+    }
+
+    .cell > * {
+        width: 100%;
+        height: 100%;
+        user-select: none;
+    }
+
+    .cell select {
+        color: var(--text);
+        padding: 0px 8px;
+    }
+
+    .cell input {
+        flex: 1;
+        width: inherit;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border: 0px;
+        outline: transparent;
+        margin-left: 16px;
+        background: transparent;
+    }
+
+    .cell input[type="checkbox"] {
+        width: auto;
+        height: auto;
+        margin: 0 auto;
+    }
+
+    .cell span {
+        margin: 0 16px;
+        line-height: 32px;
+    }
+
+    .cell button {
+        color: #fee;
+        background: var(--border);
+        border: 1px solid var(--primary);
+        border-radius: 4px;
+    }
+
+    .cell button:hover {
+        color: #f00;
+    }
+
+    .cell button:active {
+        border-color: var(--bg);
+    }
+</style>
+<div class="table"></div>

@@ -23,9 +23,14 @@ export class Mediator {
 
     emit(event, payload = null) {
         const cbs = this.listeners.get(event);
+        const stars = this.listeners.get('*'); 
         if (cbs) {
             // Copy to avoid mutation-while-iterating issues
             [...cbs].forEach(cb => cb(payload));
+        }
+        if (stars) {
+            // Copy to avoid mutation-while-iterating issues
+            [...stars].forEach(cb => cb({ event, body: payload }));
         }
     }
 

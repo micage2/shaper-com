@@ -1,10 +1,12 @@
 $oldDir = Get-Location
 cd "$HOME\developer\projects" # start search path
 
+$pattern = "TableView"
+# $pattern = "\.toUpperCase\("
 # $pattern = "\.sort\("
-$pattern = "localeCompare"
+# $pattern = "localeCompare"
 
-rg $pattern -g "*.js" -g "!**/ollama/**" -g "!**/WebGPU/**" -g "!**/node_modules/**" -g "!**/*Laravel*/**" -n . |
+rg $pattern -g "*.js" -g "!**/ollama/**" -g "!**/python/**" -g "!**/WebGPU/**" -g "!**/node_modules/**" -g "!**/*Laravel*/**" -n . |
   ForEach-Object {
     $parts = $_ -split ':'
     "$($parts[0]), line $($parts[1])"

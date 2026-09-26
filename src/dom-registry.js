@@ -105,7 +105,7 @@ function validateScheme(scheme, data, path = '') {
     return errors;
 }
 
-function create(clsid, options = {}, ifaceName) {
+function __create(clsid, options = {}, ifaceName) {
     const klass = klasses.get(clsid);
     if (!klass) {
         console.error(`[DOM] Unknown component type: ${clsid}`);
@@ -170,6 +170,10 @@ function create(clsid, options = {}, ifaceName) {
         once(msg, cb) {
             if (!this.mediator) return null;
             return this.mediator.once(msg, cb.bind(this));
+        },
+
+        clear() {
+            return this.mediator.clear();
         }
     };
     
@@ -195,6 +199,113 @@ function create(clsid, options = {}, ifaceName) {
     
     // Create mediator per instance
     iface.mediator = new Mediator();
+    
+    // Post-create hook
+    if (icomp.postCreate) {
+        icomp.postCreate.bind(iface)(instance);
+    }
+    
+    // Return requested interface or default
+    if (ifaceName) {
+        return iface.as(ifaceName);
+    }
+    
+    if (klass.defaultRole) {
+        return iface.as(klass.defaultRole);
+    }
+    
+    return iface;
+}
+
+function create(clsid, options = {}, ifaceName) {
+    const klass = klasses.get(clsid);
+    if (!klass) {
+        console.error(`[DOM] Unknown component type: ${clsid}`);
+        return null;
+    }
+
+    if (klass.info.scheme) {
+        const errors = validateScheme(klass.info.scheme, options);
+        if (errors.length > 0) {
+            console.error(`[DOM] Invalid data for ${clsid}:`, errors);
+            return null;
+        }
+    }
+
+    // Create base interface
+    const mediator = new Mediator();
+    const iface = {
+        uid: gen_id(),
+        type: clsid,
+        
+        as(roleName) {
+            const instance = ifaceToInstance.get(this);
+            if (!instance) return null;
+            
+            let roles = instanceRoles.get(instance);
+            if (!roles) {
+                roles = new Map();
+                instanceRoles.set(instance, roles);
+            }
+            
+            if (roles.has(roleName)) {
+                return roles.get(roleName);
+            }
+            
+            const roleFactory = klass.roles.get(roleName);
+            if (!roleFactory) {
+                console.warn(`[DOM] No role '${roleName}' on ${klass.info.clsid}`);
+                return null;
+            }
+            
+            const roleImpl = roleFactory.bind(this)(instance);
+            const roleIface = Object.create(this);
+            Object.assign(roleIface, roleImpl);
+            
+            roles.set(roleName, roleIface);
+            ifaceToInstance.set(roleIface, instance);
+            
+            return roleIface;
+        },
+                
+        emit(msg, payload = null) {
+            mediator.emit(msg, payload);
+        },
+        
+        on(msg, cb) {
+            const sub = mediator.on(msg, cb);
+            return sub;
+        },
+        
+        once(msg, cb) {
+            return mediator.once(msg, cb);
+        },
+
+        clear() {
+            return mediator.clear();
+        }
+    };
+    
+    // Call ctor with this = iface
+    const icomp = klass.ctor.bind(iface)(options);
+    
+    if (!icomp) {
+        console.error(`[DOM] Invalid component: ${clsid}`);
+        return null;
+    }
+    
+    const instance = icomp.getInstance();
+    instance.__hub = mediator;
+    const host = icomp.getHost();
+
+    // automatic class name
+    const className = clsid.split('.').pop();
+    host.classList.add(className);
+
+    // Store instance and host
+    ifaceToInstance.set(iface, instance);
+    instanceHosts.set(instance, host);
+    instanceRoles.set(instance, new Map());
     
     // Post-create hook
     if (icomp.postCreate) {
@@ -266,7 +377,8 @@ function detach(iface) {
     host.parentNode.removeChild(host);
 
     iface.emit('unmounted');
-
+    iface.clear();
+    
     return true;
 }
 

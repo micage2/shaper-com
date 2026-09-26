@@ -1,12 +1,32 @@
 import { DomRegistry as DOM } from '../dom-registry.js';
 
+
+/**
+ * @param {Object} args
+ * @property {{label: string, value: string}[]} args.options
+ * @property {string} args.value
+ * 
+ *
+ * {{ options: {label: string, value: string}[], value: string }} props
+ */
 function ctor(args = {}) {
     const self = this;
 
     const host = document.createElement('select');
-    host.style.cssText = 'height: var(--control-height, 28px); padding: var(--control-padding, 4px 12px); border: var(--control-border, 1px solid #ccc); border-radius: var(--control-radius, 4px); font-size: var(--control-font-size, 12px); background:#fff; cursor:pointer; font-family: Segoe UI, Arial, sans-serif;';
+
+    host.style.cssText = `
+        height: var(--control-height, 28px);
+        padding: var(--control-padding, 4px 12px);
+        border-color: var(--border, #378);
+        border-radius: var(--control-radius, 4px);
+        font-size: var(--control-font-size, 12px);
+        background: var(--bg, #333);
+        cursor: pointer;
+        font-family: Segoe UI, Arial, sans-serif;
+    `;
 
     function _addOption(option) {
+        /** @type {HTMLOptionElement} */
         const opt = document.createElement('option');
         opt.value = option.value;
         opt.textContent = option.label;
@@ -25,22 +45,32 @@ function ctor(args = {}) {
 
     function findOption(value) {
         for (let i = host.length - 1; i >= 0; i--) {
-            if (host[i].value === value) {
+            const option = host[i];
+            // @ts-ignore
+            if (option.value === value) {
                 return i;
             }
         }
         return -1;
     }
 
-    args.options.forEach((option) => { _addOption(option); });
+    args.options?.forEach((option) => { _addOption(option); });
+
+    host.addEventListener('change', (ev) => {
+        self.emit('changed', {
+            value: host.value,
+            label: host.options[host.selectedIndex].label
+        });
+    });
 
     if (args.value !== undefined) {
         host.value = args.value;
-    }
 
-    host.addEventListener('change', () => {
-        self.emit('changed', { value: host.value });
-    });
+        // have to delay emission, because listeners aren't wired yet
+        setTimeout(() => {
+            this.emit('changed', { value: host.value });
+        }, 1);
+    }
 
     return {
         getHost() { return host; },

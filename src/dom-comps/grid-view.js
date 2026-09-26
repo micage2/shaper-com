@@ -138,8 +138,7 @@ function ctor(args = {}) {
         header.appendChild(label);
         
         const sortBtn = createSortButton(col.colId);
-        header.appendChild(sortBtn);
-        
+        header.appendChild(sortBtn);        
         column.appendChild(header);
         
         const slot = document.createElement('slot');

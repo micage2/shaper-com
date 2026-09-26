@@ -106,10 +106,6 @@ function ctor(args = {}) {
                 box-sizing: border-box;
                 font: inherit;
             `;
-            const emptyOption = document.createElement('option');
-            emptyOption.value = '';
-            emptyOption.textContent = '';
-            select.appendChild(emptyOption);
             
             const targetTable = model.getTable(targetTableUuid);
             if (targetTable) {
@@ -185,9 +181,6 @@ function ctor(args = {}) {
         const input = editContainer.querySelector('input, select');
         if (input) {
             input.focus();
-            // if (input.tagName === 'INPUT') {
-            //     input.select();
-            // }
         }
     }
     

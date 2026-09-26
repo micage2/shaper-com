@@ -2,7 +2,17 @@ import { DomRegistry as DOM } from '../dom-registry.js';
 
 function ctor(args = {}) {
     const host = document.createElement('button');
-    host.style.cssText = 'height: var(--control-height, 28px); padding: var(--control-padding, 4px 12px); border: var(--control-border, 1px solid #ccc); border-radius: var(--control-radius, 4px); font-size: var(--control-font-size, 12px); background:#fff; cursor:pointer; white-space:nowrap; font-family: Segoe UI, Arial, sans-serif;';
+    host.style.cssText = `
+        height: var(--control-height, 28px); 
+        padding: var(--control-padding, 4px 12px); 
+        border: var(--control-border, 1px solid #ccc); 
+        border-radius: var(--control-radius, 4px); 
+        font-size: var(--control-font-size, 12px); 
+        /* background: #fff; */
+        cursor: pointer; 
+        white-space:nowrap; 
+        font-family: Segoe UI, Arial, sans-serif;
+    `;
     host.textContent = args.label || '';
     
     host.addEventListener('click', () => this.emit('clicked'));

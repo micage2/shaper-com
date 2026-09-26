@@ -18,13 +18,12 @@ function ctor(args = {}) {
                 // padding: 4px 8px;
                 box-sizing: border-box;
                 background: #6183be;
-                border-bottom: 1px solid #ccc;
             }
             .sections {
                 display: flex;
                 align-items: center;
                 padding: 0 8px;
-                gap: 8px;
+                gap: 16px;
                 flex: 1;
             }
             .section {
@@ -41,7 +40,7 @@ function ctor(args = {}) {
             }
             .section-label {
                 font-size: 12px;
-                color: #666;
+                color: #aaa;
                 user-select: none;
             }
             .idle-slot {
@@ -106,6 +105,9 @@ function ctor(args = {}) {
 }
 
 const ITwoStateBox = (instance) => ({
+    // TODO:
+    // I don't like the signature of the TwoStateBox.add() function. 
+    // An object would more descriptive.
     add(name, position = 'center', idle, edit) {
         const toggle = TwoState({ idle, edit });
         

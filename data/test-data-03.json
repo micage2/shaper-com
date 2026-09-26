@@ -31,7 +31,7 @@
           {"id": 0, "data": {"b1a2b3c4": "Fernsehturm", "b2d5e6f7": 0, "b3g8h9i1": 1969, "b4j2k3l4": true}},
           {"id": 1, "data": {"b1a2b3c4": "Brandenburger Tor", "b2d5e6f7": 0, "b3g8h9i1": 1791, "b4j2k3l4": true}},
           {"id": 2, "data": {"b1a2b3c4": "Elbphilharmonie", "b2d5e6f7": 1, "b3g8h9i1": 2016, "b4j2k3l4": true}},
-          {"id": 3, "data": {"b1a2b3c4": "Frauenkirche", "b2d5e6f7": 2, "b3g8h9i1": 1488, "b4j2k3l4": true}},
+          {"id": 3, "data": {"b1a2b3c4": "Frauenkirche", "b2d5e6f7": 2, "b3g8h9i1": 1488, "b4j2k3l4": false}},
           {"id": 4, "data": {"b1a2b3c4": "Stephansdom", "b2d5e6f7": 3, "b3g8h9i1": 1160, "b4j2k3l4": true}},
           {"id": 5, "data": {"b1a2b3c4": "Grossmünster", "b2d5e6f7": 5, "b3g8h9i1": 1220, "b4j2k3l4": true}}
         ]
@@ -63,7 +63,7 @@
           {"id": 0, "data": {"p1a2b3c4": "Karl Friedrich Schinkel", "p2d5e6f7": 60, "p3g8h9i1": 0, "p4j2k3l4": true}},
           {"id": 1, "data": {"p1a2b3c4": "Fritz Höger", "p2d5e6f7": 72, "p3g8h9i1": 1, "p4j2k3l4": true}},
           {"id": 2, "data": {"p1a2b3c4": "Friedensreich Hundertwasser", "p2d5e6f7": 71, "p3g8h9i1": 3, "p4j2k3l4": true}},
-          {"id": 3, "data": {"p1a2b3c4": "Angela Merkel", "p2d5e6f7": 69, "p3g8h9i1": 0, "p4j2k3l4": false}}
+          {"id": 3, "data": {"p1a2b3c4": "Harald Juhnke", "p2d5e6f7": 54, "p3g8h9i1": 0, "p4j2k3l4": false}}
         ]
       },
       {

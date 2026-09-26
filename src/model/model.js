@@ -281,7 +281,7 @@ class Model {
         };
     }
     
-    static fromJSON(data) {
+    static __fromJSON(data) {
         const model = new Model();
         for (const tableData of data.tables) {
             const table = Table.fromJSON(tableData);
@@ -290,6 +290,34 @@ class Model {
         }
         return model;
     }
+
+    static fromJSON(data) {
+        const model = new Model();
+        for (const tableData of data.tables) {
+            const table = Table.fromJSON(tableData);
+            
+            const nameColumn = table.forColumns(col => col.name === 'name');
+            if (!nameColumn) {
+                const column = new Column('name', 1);
+                
+                // Prepend to Map
+                const newColumns = new Map();
+                newColumns.set(column.colId, column);
+                for (const [id, col] of table.columns) {
+                    newColumns.set(id, col);
+                }
+                table.columns = newColumns;
+                
+                for (const row of table.rows.values()) {
+                    row.data[column.colId] = `${table.name} #${row.id}`;
+                }
+            }
+            
+            model._subscribeTable(table);
+            model.tables.set(table.uuid, table);
+        }
+        return model;
+    }    
 }
 
 export { Model };
