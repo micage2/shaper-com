@@ -121,19 +121,6 @@ function ctor({hub: iTable, options = {}}) {
 
     let rowCount = 1;
 
-    const onEditCell = (msg) => {
-        console.log("[TableView] onEditCell", msg);
-        const children = msg.elem.children;
-        if (msg.cell.type === 1) {
-            const label = children[0];
-            const input = children[1];
-            // input.style.width = children[0].clientWidth + "px";
-            label.style.display = 'none';
-            input.style.display = '';
-            input.focus();
-        }     
-    }
-
     function findTableCoords(cell) {
         const colElem = cell.parentElement;
         const rowIndex = Array.from(colElem.children).indexOf(cell);
@@ -143,9 +130,6 @@ function ctor({hub: iTable, options = {}}) {
     
     const self = {
         iTable,
-        table,
-        findTableCoords,
-        onEditCell,
         columns,
     };
 
@@ -184,11 +168,15 @@ function ctor({hub: iTable, options = {}}) {
 
         const cells = new Map();
         columns.set(colElem, { ...col, cells });
+        const [col0] = columns.values();
 
         // add cells for existing rows
-        for (let n = 0; n < rowCount - 1; n++) {
-            const cell = Cell({ col, cell: { type: col.type } });
-            colElem.appendChild(cell);
+        // for (let n = 0; n < rowCount - 1; n++) {
+        for (const cell0 of col0.cells.values()) {
+            const cell = { type: col.type, rowId: cell0.rowId,  };
+            const cellElem = Cell({ col, cell });
+            colElem.appendChild(cellElem);
+            cells.set(cellElem, cell);
         }
 
         return colElem;
@@ -271,7 +259,7 @@ function ctor({hub: iTable, options = {}}) {
             content.checked = typeof cell.value === 'boolean' ? cell.value : false;
         }
         else if (col.type === 42) {
-            content = Select(self, { value: cell.value, link: col.targetTableUuid });
+            content = Select(self, { value: cell.value || 0, link: col.targetTableUuid });
         }
         
         if (content) cellElem.appendChild(content);
@@ -304,9 +292,14 @@ function ctor({hub: iTable, options = {}}) {
 
     subs.push(iTable.on('column-deleted', (col) => {
         console.log('[TableView] column-deleted', col, that.uid);
-        const colHeader = Array.from(table.querySelectorAll('.col-header'))
-            .find(colhead => colhead.textContent === col.name);
-        if (colHeader) colHeader.parentElement.remove();
+
+        columns.entries().forEach(([el, v]) => {
+            if(v.id === col.id) {
+                el.nextElementSibling.remove(); // ruler
+                el.remove();
+                columns.delete(el);
+            }
+        });
     }));
 
     subs.push(iTable.on('row-created', (row) => {
