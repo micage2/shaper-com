@@ -38,7 +38,6 @@ const Select = (self, cell) => {
     });
     selectEl.value = String(value);
     selectEl.addEventListener('change', (ev) => {
-        console.log('cell changed', ev.target);
         // @ts-ignore
         const col = self.columns.get(ev.target.parentElement.parentElement);
         // @ts-ignore
@@ -106,6 +105,9 @@ const fragment = await loadFragment(html_file);
 
 function ctor({hub: iTable, options = {}}) {
     const that = this;
+
+    console.log('TODO:', '[TableView]', 'not allow name column removal');
+    console.log('TODO:', '[TableView]', 'not allow link to itself');
 
     const host = Div();
     const shadow = host.attachShadow({ mode: 'closed' });
