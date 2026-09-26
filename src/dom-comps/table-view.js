@@ -331,8 +331,6 @@ function ctor({hub: iTable, options = {}}) {
     }));
 
     subs.push(iTable.on('row-deleted', (row) => {
-        console.log('TODO:', '[TableView] on row-deleted', row);
-        const cellsToRemove = [];
         columns.values().forEach(col => {
             col.cells.entries().forEach(([cellElem, cell]) => {
                 if (cell.rowId === row.id) {
@@ -341,7 +339,6 @@ function ctor({hub: iTable, options = {}}) {
                 }
             });
         });
-        // TODO: find all cells and remove them
     }));
 
     subs.push(iTable.on('cell-changed', (cell) => {

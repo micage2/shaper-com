@@ -3,6 +3,9 @@ import { Mediator } from '../shared/mediator.js';
 export default function Model() {
     const tables = new Map();  // tableUuid -> { uuid, name, columns: Map, rows: Map, nextRowId }
     const hub = new Mediator();
+
+    console.log('TODO:', '[DB]', 'new column ids');
+    console.log('TODO:', '[DB]', 'new loader without ids');
     
     function generateUuid() {
         if (typeof crypto !== 'undefined' && crypto.randomUUID) {

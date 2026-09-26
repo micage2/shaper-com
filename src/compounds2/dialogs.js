@@ -188,7 +188,6 @@ function DeleteRow(iRow) {
     
     const confirm = DOM.create(Button, { label: '✓' });
     confirm.on('clicked', () => {
-        console.log('TODO:', '[DeleteRow] delete row', currentRowId);
         iRow.deleteRow(currentRowId);
         toolbar.emit('close');
     });
