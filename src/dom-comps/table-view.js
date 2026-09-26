@@ -222,16 +222,27 @@ function ctor({hub: iTable, options = {}}) {
         else if (col.type === 1 || col.type === 2) {
             input = document.createElement('input');
             input.value = cell.value;
-            input.addEventListener('change', (ev) => {
-                console.log('TODO', '[TableView] change', input);
-                if (input.value !== cell.value && input.value !== "") {
-                    self.iTable.setCell(col.id, cell.rowId, input.value);
+            // input.addEventListener('change', (ev) => {
+            //     console.log('TODO', '[TableView] change', input);
+            //     if (input.value !== cell.value && input.value !== "") {
+            //         self.iTable.setCell(col.id, cell.rowId, input.value);
+            //     }
+            // });
+            input.addEventListener('keydown', (ev) => {
+                if (ev.key === 'Enter') {
+                    input.blur();
+                }
+                else if (ev.key === 'Escape') {
+                    ev.preventDefault();
+                    input.style.display = 'none';
+                    content.style.display = '';
+                    input.value = content.textContent;
                 }
             });
             input.addEventListener('blur', (ev) => {
                 input.style.display = 'none';
                 content.style.display = '';
-                if (input.value !== cell.value && input.value !== "") {
+                if (input.value !== "") {
                     self.iTable.setCell(col.id, cell.rowId, input.value);
                 }
             });
