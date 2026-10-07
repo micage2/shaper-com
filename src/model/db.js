@@ -4,8 +4,8 @@ export default function Model() {
     const tables = new Map();  // tableUuid -> { uuid, name, columns: Map, rows: Map, nextRowId }
     const hub = new Mediator();
 
-    console.log('TODO:', '[DB]', 'new column ids');
-    console.log('TODO:', '[DB]', 'new loader without ids');
+    console.log('⚙️', '[DB]', 'shorter column ids');
+    console.log('⚙️', '[DB]', 'loader without ids');
     
     function generateUuid() {
         if (typeof crypto !== 'undefined' && crypto.randomUUID) {
@@ -49,13 +49,6 @@ export default function Model() {
         tables.set(uuid, table);
         
         emit('db-table-created', { uuid, name });
-        emit('db-column-created', {
-            tableUuid: uuid,
-            id: nameColId,
-            name: 'name',
-            type: 1,
-            targetTableUuid: null
-        });
         
         return uuid;
     }
@@ -110,6 +103,7 @@ export default function Model() {
     
     // === Columns ===
     function createColumn(tableUuid, spec) {
+        console.log('⚙️', 'DB', 'check tableUuid of created column', spec);
         const table = tables.get(tableUuid);
         if (!table) return false;
         
@@ -217,14 +211,21 @@ export default function Model() {
         return true;
     }
     
-    function forColumns(tableUuid, callback) {
+    function forColumns(tableUuid, callback, option = 'all') {
         const table = tables.get(tableUuid);
         if (!table) return [];
 
-        if (typeof callback === 'function') {        
-            for (const col of table.columns.values()) {
-                if (callback(col)) return col;
+        const cols = table.columns.values();
+        
+        if (typeof callback === 'function') {      
+            const results = [];
+            for (const col of cols) {
+                if(callback(col)) {
+                    if (option === 'one') return col;
+                    else results.push(col);
+                }
             }
+            return option === 'all' ? results : null;
         }
         else {
             return [...table.columns.values()];
@@ -234,14 +235,7 @@ export default function Model() {
     function getColumn(tableUuid, colId) {
         const table = tables.get(tableUuid);
         if (!table) return null;
-        const col = table.columns.get(colId);
-        if (!col) return null;
-        return {
-            id: col.id,
-            name: col.name,
-            type: col.type,
-            targetTableUuid: col.targetTableUuid
-        };
+        return table.columns.get(colId) || null;
     }
     
     function getColumns(tableUuid) {
@@ -365,6 +359,14 @@ export default function Model() {
             data: { ...row.data }
         }));
     }
+
+    function getRowName(row) {
+        const table = tables.get(row.tableUuid);
+
+        const [nameCol] = table.columns.values();
+
+        return row.data[nameCol.id];
+    }
     
     // === Cells ===
     function setCell(tableUuid, rowId, colId, value) {
@@ -379,12 +381,14 @@ export default function Model() {
         
         const col = table.columns.get(colId);
         emit('db-cell-changed', {
+            oldValue,
+            newValue: value,
             tableUuid,
             rowId,
             colId,
-            columnName: col ? col.name : '',
-            oldValue,
-            newValue: value
+            columnName: col.name,
+            type: col.type,
+            targetTableUuid: col.targetTableUuid
         });
         
         return true;
@@ -601,9 +605,9 @@ export default function Model() {
         on, off, emit,
         createTable, deleteTable, renameTable, forTables, getTableInfo,
         createColumn, deleteColumn, renameColumn, forColumns, getColumn, getColumns,
-        createRow, deleteRow, forRows, getRow, getRows,
+        createRow, deleteRow, forRows, getRow, getRows, getRowName,
         setCell, getCell,
         findChildren, buildTree,
-        load, save
+        load, save, replay,
     };
 }

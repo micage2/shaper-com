@@ -4,7 +4,15 @@ function ctor(args = {}) {
     const self = this;
     
     const host = document.createElement('div');
-    host.style.cssText = 'display:flex !important; flex-direction:column !important; width:100% !important; height:100% !important; overflow-y:auto !important; overflow-x:hidden !important; box-sizing:border-box !important;';
+    host.style.cssText = `
+        display:flex !important;
+        flex-direction:column !important;
+        width:100% !important;
+        height:100% !important;
+        overflow-y:auto !important;
+        overflow-x:hidden !important;
+        box-sizing:border-box !important;
+    `;
 
     const caption = document.createElement('div');
     const caption_text =  document.createElement('span');
@@ -13,7 +21,7 @@ function ctor(args = {}) {
         text-align: center; 
         padding: 8px; 
         font-size: 22px;
-        border-bottom: 1px solid #ccd;
+        border-bottom: 1px solid var(--border);
     `;
     caption_text.textContent = args.caption;
     caption.appendChild(caption_text);
@@ -28,15 +36,15 @@ function ctor(args = {}) {
             width: 100%;
             height: 40px;
             align-items:center; 
-            padding:0px 0px; 
-            border-bottom:1px solid #eee;
+            padding: 0px 1px; 
+            border-bottom: 1px solid var(--border);
         `;
         
         const label = document.createElement('span');
         label.style.cssText = `
             flex:0 0 120px; 
             font-size:13px;
-            color:#333;
+            color: var(--text);
             font-family: Segoe UI, Arial, sans-serif;
             padding: 6px 12px;
             text-align: right;
@@ -70,7 +78,10 @@ const typeIds = [1, 2, 3, 42];
 const input_types = ['text', 'number', 'checkbox', ''];
 
 const IPropertyView = (instance) => ({
+    // name, type, value
     add(prop) {
+        console.info('💡', '[IPropertyView.add]', prop);
+
         const typeIndex = typeIds.indexOf(prop.type);
         if (typeIndex < 0) {
             console.warn('Invalid datatype', prop.type);
@@ -83,6 +94,9 @@ const IPropertyView = (instance) => ({
         
         if (prop.type !== 42) {
             child = document.createElement('input');
+            child.style.cssText = `
+                background-color: transparent;
+            `;
             child.type = input_types[typeIndex];
             if (prop.type === 3) {
                 child.checked = prop.value || false;
@@ -93,8 +107,8 @@ const IPropertyView = (instance) => ({
             child = document.createElement('select');
             for (const option of prop.options || []) {
                 const opt = document.createElement('option');
-                opt.value = String(option.idx);
-                opt.textContent = option.name;
+                opt.value = String(option.value);
+                opt.textContent = option.label;
                 child.appendChild(opt);
             }
             if (prop.value !== null && prop.value !== undefined) {
@@ -107,6 +121,8 @@ const IPropertyView = (instance) => ({
             height: 100%;
             border: 0;
             text-align: left;
+            background-color: var(--bg);
+            // padding: 0 8px;
         `;
         if (prop.type === 3) child.style.width = '';
         
@@ -116,15 +132,16 @@ const IPropertyView = (instance) => ({
             
             if (prop.type === 1) newValue = child.value;
             else if (prop.type === 2) newValue = Number(child.value);
+            // @ts-ignore
             else if (prop.type === 3) newValue = child.checked || false;
             else if (prop.type === 42) newValue = Number(child.value);
             
             prop.value = newValue;
             
             this.emit('value-changed', {
-                tableUuid: prop.tableUuid,
+                // tableUuid: prop.tableUuid,
                 colId: prop.colId,
-                rowId: prop.rowId,
+                // rowId: prop.rowId,
                 oldValue: oldValue,
                 value: newValue
             });

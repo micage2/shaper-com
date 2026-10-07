@@ -17,7 +17,7 @@ function ctor(args = {}) {
                 width: 100%;
                 // padding: 4px 8px;
                 box-sizing: border-box;
-                background: #6183be;
+                background: var(--primary-color);
             }
             .sections {
                 display: flex;

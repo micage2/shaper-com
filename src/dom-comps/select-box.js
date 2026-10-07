@@ -13,7 +13,6 @@ function ctor(args = {}) {
     const self = this;
 
     const host = document.createElement('select');
-
     host.style.cssText = `
         height: var(--control-height, 28px);
         padding: var(--control-padding, 4px 12px);
@@ -31,6 +30,8 @@ function ctor(args = {}) {
         opt.value = option.value;
         opt.textContent = option.label;
         host.appendChild(opt);
+
+        // this silently sets the selectedOptions
     }
 
     function _removeOption(value) {
@@ -80,8 +81,37 @@ function ctor(args = {}) {
 
 const ISelectBox = ({ host, _addOption, _removeOption, _setLabel }) => ({
     getValue() { return host.value; },
-    setValue(value) { host.value = value; },
-    addOption(label, value) { _addOption({label, value}); },
+    setValue(value) {
+        host.value = value;
+    },
+    getSelected() {
+        const [s] = host.selectedOptions;
+        return s ? ({ label: s.label, value: s.value }) : {};
+    },
+    addOption(label, value) {
+        let flag = false;
+        if (host.selectedIndex < 0)
+            flag = true;
+
+        _addOption({label, value});
+
+        if (flag) {
+            console.log('❓', '[Selector]', 'autoselect, this might be a mistake');
+            this.emit('changed', {label, value});
+        }
+    },
+    addOptionObj(option) {
+        let flag = false;
+        if (host.selectedIndex < 0)
+            flag = true;
+
+        _addOption(option);
+
+        if (flag) {
+            console.log('❓', '[Selector]', 'autoselect, this might be a mistake, select:', option.label);
+            this.emit('changed', option);
+        }
+    },
     removeOption(value) { _removeOption(value) },
     setLabel(value, label) { _setLabel(value, label) },
     focus() {

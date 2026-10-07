@@ -5,7 +5,13 @@ function ctor(args = {}) {
     
     const host = document.createElement('div');
     host.className = 'tree-view';
-    host.style.cssText = 'display:block !important; overflow-y:auto !important; overflow-x:hidden !important; width:100% !important; height:100% !important;';    
+    host.style.cssText = `
+        display:block !important; 
+        overflow-y:auto !important;
+        overflow-x:hidden !important;
+        width:100% !important;
+        height:100% !important;
+    `;
     
     const itemClsid = args.itemClsid;
     

@@ -27,6 +27,7 @@ export default function TableEditor(db) {
 
     db.on('db-column-created', (col) => {
         if (col.tableUuid !== currentUuid) return;
+        console.info('💡', '[TE]', 'db-column-created', col);
         tbs.emit('column-created', col);
     });
 
@@ -37,6 +38,8 @@ export default function TableEditor(db) {
     
     db.on('db-row-created', (row) => {
         if (row.tableUuid !== currentUuid) return;
+        const rowName = db.getRowName(row);
+        console.info('💡', '[TE]', 'db-row-created:', rowName);
         tbs.emit('row-created', row);
     });
 
@@ -74,12 +77,14 @@ export default function TableEditor(db) {
             },
             setCell: (colId, rowId, value) => db.setCell(currentUuid, rowId, colId, value),
         }
+
         if (currentTableView) {
             currentTableView.unsubscribe(); // VERY important !!!
         }
         currentTableView = TableView(iTable, { title: 'Table' });
         tbs.setBottom(currentTableView);
 
+        // db does not emit during load, so replay it
         const columns = db.getColumns(tableUuid);
         for (const col of columns) {
             tbs.emit('column-created', col);
@@ -122,7 +127,7 @@ export default function TableEditor(db) {
     tableSelector.on('changed', (option) => {
         const tableUuid = option.value;
         const name = option.label;
-        console.log('[tableSelector] -> changed', option);
+        console.log('💡', '[tableSelector] changed', option);
 
         tbs.emit('table-selected', { uuid: tableUuid, name });
         showTableView(tableUuid, getLinks());
@@ -132,7 +137,7 @@ export default function TableEditor(db) {
         tableSelector.addOption(table.name, table.uuid);
         if (!hadSelection) {
             tbs.emit('table-selected', table);
-            showTableView(table.uuid, getLinks());
+            // showTableView(table.uuid, getLinks());
         }
     });
     tbs.on('table-renamed', (table) => {
@@ -156,22 +161,23 @@ export default function TableEditor(db) {
     });
 
     // add dialogs to ToggleBar
-    // toggleBar.add('type-select', 'left', typeSelect, null);
-    toggleBar.add('type-select', 'left', tableSelector, null);
+    console.log('⚙️', '[TE]', 'only add row/col dialogs if a table exists');
+
+    toggleBar.add('table-select', 'left', tableSelector, null);
 
     toggleBar.add('add-type', 'left', Dialog.IdleButton('+ Table'), Dialog.AddTable(iModel));
-    toggleBar.add('rename-type', 'left', Dialog.IdleButton('Edit'), Dialog.RenameTable(iModel));
+    toggleBar.add('rename-type', 'left', Dialog.IdleButton('✏️'), Dialog.RenameTable(iModel));
     toggleBar.add('delete-type', 'left', Dialog.IdleButton('Delete'), Dialog.DeleteTable(iModel));
 
     toggleBar.add('add-row', 'center', Dialog.IdleButton('+ Row'), Dialog.AddRow(iRow));
-    const deleteRowButton = Dialog.IdleButton('Delete');
+    const deleteRowButton = Dialog.IdleButton('🗑');
     deleteRowButton.hide();
     toggleBar.add('delete-row', 'center', deleteRowButton, Dialog.DeleteRow(iRow));
 
     toggleBar.add('add-property', 'right', Dialog.IdleButton('+ Column'), Dialog.AddColumn(iProperty));
-    toggleBar.add('delete-property', 'right', Dialog.IdleButton('Delete'), Dialog.DeleteColumn(iProperty));
+    toggleBar.add('delete-property', 'right', Dialog.IdleButton('🗑'), Dialog.DeleteColumn(iProperty));
 
-    // bootstrap, TypeSelect listens, this selects and displays the first table
+    // bootstrap, tbs listens, this selects and displays the first table
     db.forTables(table => tbs.emit('table-created', table));
 
     // const ret = db.forTables(table => {

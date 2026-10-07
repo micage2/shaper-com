@@ -106,8 +106,9 @@ const fragment = await loadFragment(html_file);
 function ctor({hub: iTable, options = {}}) {
     const that = this;
 
-    console.log('TODO:', '[TableView]', 'not allow name column removal');
-    console.log('TODO:', '[TableView]', 'not allow link to itself');
+    console.log('⚙️', '[TableView]', 'not allow name column removal');
+    console.log('⚙️', '[TableView]', 'not allow link to itself');
+    console.log('⚙️', '[TableView]', 'check click-away of dialogs');
 
     const host = Div();
     const shadow = host.attachShadow({ mode: 'closed' });
@@ -135,7 +136,7 @@ function ctor({hub: iTable, options = {}}) {
         columns,
     };
 
-    that.on('unmounted', () => console.log('[TableView] unmounted', that.uid));
+    that.on('unmounted', () => console.log('💡', '[TableView] unmounted', that.uid));
 
     // init fixed columns
     const initCols = [
@@ -292,7 +293,7 @@ function ctor({hub: iTable, options = {}}) {
 
     const subs = []; // collect subscriptions for unsubscribe
     subs.push(iTable.on('column-created', (col) => {
-        // console.log('[TableView] column-created', col, that.uid);
+        console.log('💡', '[TableView] column-created: ', col.name);
 
         // create a new column, append to the table
         const colElem = Column(col);
@@ -315,7 +316,7 @@ function ctor({hub: iTable, options = {}}) {
     }));
 
     subs.push(iTable.on('row-created', (row) => {
-        // console.log('[TableView] row-created', row);
+        console.log('💡', '[TableView] column-created: ', row);
 
         for (const [colElem, col] of columns.entries()) {
             const cell = {

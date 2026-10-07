@@ -24,7 +24,7 @@
         "columns": [
           {"colId": "b1a2b3c4", "name": "name", "type": 1},
           {"colId": "b2d5e6f7", "name": "city", "type": 42, "targetTableUuid": "11111111-1111-1111-1111-111111111111"},
-          {"colId": "b3g8h9i1", "name": "yearBuilt", "type": 2},
+          {"colId": "b3g8h9i1", "name": "built", "type": 2},
           {"colId": "b4j2k3l4", "name": "isOpen", "type": 3}
         ],
         "rows": [

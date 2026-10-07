@@ -8,14 +8,9 @@ export function getRowLabel(model, tableUuid, rowId) {
     const row = model.getRow(tableUuid, rowId);
     if (!row) return `Row ${rowId}`;
     
-    const nameColumn = model.forColumns(tableUuid, col => col.name === 'name');
-    if (nameColumn && row.data[nameColumn.colId]) {
-        return row.data[nameColumn.colId];
-    }
-    
-    const stringColumn = model.forColumns(tableUuid, col => col.type === 1);
-    if (stringColumn && row.data[stringColumn.colId]) {
-        return row.data[stringColumn.colId];
+    const nameColumn = model.forColumns(tableUuid, col => col.name === 'name', 'one');
+    if (nameColumn && row.data[nameColumn.id]) {
+        return row.data[nameColumn.id];
     }
     
     return `Row ${rowId}`;
@@ -80,6 +75,8 @@ export function buildTree(model, tableUuid) {
     }
     
     addNodes(tree);
+
+    treeView.select(null); // otherwise a later select call might not fire
     
     return treeView;
 }

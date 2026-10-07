@@ -377,7 +377,7 @@ function detach(iface) {
     host.parentNode.removeChild(host);
 
     iface.emit('unmounted');
-    iface.clear();
+    // iface.clear();
     
     return true;
 }

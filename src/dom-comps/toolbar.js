@@ -38,7 +38,7 @@ const IToolbar = (instance) => ({
         return this;
     },
     remove(child) {
-        DOM.detach(child, this);
+        DOM.detach(child);
         return child;
     }
 });

@@ -13,66 +13,17 @@ const Shell = (child) => DOM.create(Shelly, { child });
 
 // idle state compound, will be replaced by edit compound when closed (by button click)
 function IdleButton(label) {
-    const button = DOM.create(Button, { label });
+    const button = DOM.create(Button, { label, size: 14 });
     button.on('clicked', function() {
         button.emit('close');
     });
     return button;
 }
 
-// deprecated
-function TableSelector(iModel) {
-    const select = Selector();
-    const shell = Shell(select);
-
-    select.on('changed', (data) => {
-        console.log('[TypeSelect] -> changed', data);
-        shell.emit('table-selected', { uuid: data.value });
-        iModel.showTableView(data.value, iModel.getLinks());
-    });
-    
-    iModel.on('table-created', (data) => {
-        const hadSelection = !!select.getValue();
-        select.addOption(data.name, data.uuid);
-        if (!hadSelection) {
-            shell.emit('table-selected', { uuid: data.uuid });
-            iModel.showTableView(data.uuid, iModel.getLinks());
-        }
-    });
-    
-    iModel.on('table-renamed', (data) => {
-        select.setLabel(data.tableUuid, data.name);
-    });
-    
-    iModel.on('table-deleted', (table) => {
-        const oldTableUuid = select.getValue();
-        select.removeOption(table.tableUuid);
-
-        if (table.tableUuid === oldTableUuid) {
-            const options = iModel.getLinks();
-            if (options.length > 0) {
-                iModel.showTableView(options[0].value, options);
-            } else {
-                iModel.showEmptyView();
-            }
-        }
-
-        const currentTableUuid = select.getValue();
-        shell.emit('table-selected', { uuid: currentTableUuid });
-    });
-    
-    return shell;
-}
-
-function AddTable(iModel) {
+function CreateType(iModel) {
     const toolbar = DOM.create(Toolbar, {});
-    const label = DOM.create(Label, { text: 'Create Table:' });
-    const input = DOM.create(TextInput, { value: '', placeholder: 'Table name' });
-
-    iModel.on('table-created', (table) => {
-        console.info('💡', '[Dialog.AddTable]', 'table-created', table.name);
-        input.setValue(''); // reset
-    });
+    const label = DOM.create(Label, { text: 'Create Type:' });
+    const input = DOM.create(TextInput, { value: '', placeholder: 'Type name' });
     
     const confirm = DOM.create(Button, { label: '✓' });
     confirm.on('clicked', () => {
@@ -94,7 +45,7 @@ function AddTable(iModel) {
     return toolbar;
 }
 
-function RenameTable(iModel) {
+function RenameType(iModel) {
     const toolbar = DOM.create(Toolbar, {});
     const label = DOM.create(Label, { text: 'Rename Type:' });
     const input = DOM.create(TextInput, { value: '', placeholder: 'New name' });
@@ -122,7 +73,7 @@ function RenameTable(iModel) {
     return toolbar;
 }
 
-function DeleteTable(iModel) {
+function DeleteType(iModel) {
     const toolbar = DOM.create(Toolbar, {});
     const label = DOM.create(Label, { text: 'Delete Type?' });
 
@@ -147,69 +98,7 @@ function DeleteTable(iModel) {
     return toolbar;
 }
 
-function AddRow(iface) {
-    const toolbar = DOM.create(Toolbar, {});
-    const label = DOM.create(Label, { text: 'New Instance' });
-    const input = DOM.create(TextInput, { value: '', placeholder: 'Name' });
-    
-    let currentTableUuid = null;
-    iface.on('table-selected', (data) => {
-        currentTableUuid = data.uuid;
-    });
-    iface.on('row-created', (row) => {
-        input.setValue('');
-    });
-    
-    const confirm = DOM.create(Button, { label: '✓' });
-    confirm.on('clicked', () => {
-        const name = input.getValue().trim();
-        if (name && currentTableUuid) {
-            iface.createRow({ name });
-        }
-        toolbar.emit('close');
-    });
-    
-    const cancel = DOM.create(Button, { label: '✗' });
-    cancel.on('clicked', () => toolbar.emit('close'));
-    
-    toolbar.add(label);
-    toolbar.add(input);
-    toolbar.add(confirm);
-    toolbar.add(cancel);
-    toolbar.on('mounted', () => input.focus());
-    return toolbar;
-}
-
-function DeleteRow(iRow) {
-    let currentTableUuid;
-    let currentRowId = null;
-    iRow.on('table-selected', (table) => {
-        currentTableUuid = table.uuid;
-    });
-    iRow.on('row-selected', (row) => {
-        currentRowId = row.id;
-        label.setText(`Delete row ${row.name}?`);
-    });
-
-    const toolbar = DOM.create(Toolbar, {});
-    const label = DOM.create(Label, { text: 'Delete Instance?' });
-    
-    const confirm = DOM.create(Button, { label: '✓' });
-    confirm.on('clicked', () => {
-        iRow.deleteRow(currentRowId);
-        toolbar.emit('close');
-    });
-    
-    const cancel = DOM.create(Button, { label: '✗' });
-    cancel.on('clicked', () => toolbar.emit('close'));
-    
-    toolbar.add(label);
-    toolbar.add(confirm);
-    toolbar.add(cancel);
-    return toolbar;
-}
-
-function AddColumn(iface) {
+function CreateProperty(iface) {
     const toolbar = DOM.create(Toolbar, {});
     const input = DOM.create(TextInput, { value: '', placeholder: 'Property name' });
     const typeSelect = Selector({
@@ -275,35 +164,38 @@ function AddColumn(iface) {
     toolbar.on('mounted', () => input.focus());
     return toolbar;
 }
-
-function DeleteColumn(iTable) {
+function RenameProperty(db) {
     let select = Selector();
+    let input = null;
 
     let currentTableUuid = null;
-    iTable.on('table-selected', (table) => {
+    db.on('type-selected', (table) => {
         currentTableUuid = table.uuid;
         toolbar.remove(select);
-        select = Selector();
+
+        const options = db.getColumns(currentTableUuid).map(col => ({
+            label: col.name, value: col.id
+        }));
+        select = Selector({ options });
+
+        input = DOM.create(TextInput, {
+            value: select.getSelected().label, placeholder: 'New name'
+        });
+
+        toolbar.add(input, { after: label });
         toolbar.add(select, { after: label });
     });
 
-    iTable.on('column-created', col => {
-        // console.log('[DeleteProperty] column-created', col);
-        select.addOption(col.name, col.id);     
-    });
-
-    iTable.on('column-deleted', col => {
-        // console.log('[DeleteProperty] column-deleted', col);
-        select.removeOption(col.id);     
-    });
-
     const toolbar = DOM.create(Toolbar, {});
-    const label = DOM.create(Label, { text: 'Delete Property:' });
+    const label = DOM.create(Label, { text: 'Rename Property:' });
     
     const confirm = DOM.create(Button, { label: '✓' });
     confirm.on('clicked', () => {
         const colId = select.getValue();
-        iTable.deleteColumn(currentTableUuid, colId);
+        const value = input.getValue().trim();
+
+        db.renameColumn(currentTableUuid, colId, value);
+        
         toolbar.emit('close');
     });
     
@@ -317,18 +209,125 @@ function DeleteColumn(iTable) {
     return toolbar;
 }
 
+function DeleteProperty(db) {
+    let select = Selector();
+
+    let currentTableUuid = null;
+    db.on('type-selected', (table) => {
+        currentTableUuid = table.uuid;
+        toolbar.remove(select);
+
+        const options = db.getColumns(currentTableUuid).map(col => ({
+            label: col.name, value: col.id
+        }));
+
+        select = Selector({ options });
+        toolbar.add(select, { after: label });
+    });
+
+    // iTable.on('db-column-created', col => {
+    //     // console.log('[DeleteProperty] column-created', col);
+    //     if (currentTableUuid === col.tableUuid)
+    //         select.addOption(col.name, col.id);     
+    // });
+
+    // iTable.on('db-column-deleted', col => {
+    //     // console.log('[DeleteProperty] column-deleted', col);
+    //     if (currentTableUuid === col.tableUuid)
+    //         select.removeOption(col.id);     
+    // });
+
+    const toolbar = DOM.create(Toolbar, {});
+    const label = DOM.create(Label, { text: 'Delete Property:' });
+    
+    const confirm = DOM.create(Button, { label: '✓' });
+    confirm.on('clicked', () => {
+        const colId = select.getValue();
+        db.deleteColumn(currentTableUuid, colId);
+        toolbar.emit('close');
+    });
+    
+    const cancel = DOM.create(Button, { label: '✗' });
+    cancel.on('clicked', () => toolbar.emit('close'));
+    
+    toolbar.add(label);
+    toolbar.add(select);
+    toolbar.add(confirm);
+    toolbar.add(cancel);
+    return toolbar;
+}
+
+function CreateInstance(iface) {
+    const toolbar = DOM.create(Toolbar, {});
+    const label = DOM.create(Label, { text: 'New Instance' });
+    const input = DOM.create(TextInput, { value: '', placeholder: 'Name' });
+    
+    let currentTableUuid = null;
+    iface.on('table-selected', (data) => {
+        currentTableUuid = data.uuid;
+    });
+    
+    const confirm = DOM.create(Button, { label: '✓' });
+    confirm.on('clicked', () => {
+        const name = input.getValue().trim();
+        if (name && currentTableUuid) {
+            iface.createRow({ name });
+        }
+        toolbar.emit('close');
+    });
+    
+    const cancel = DOM.create(Button, { label: '✗' });
+    cancel.on('clicked', () => toolbar.emit('close'));
+    
+    toolbar.add(label);
+    toolbar.add(input);
+    toolbar.add(confirm);
+    toolbar.add(cancel);
+    toolbar.on('mounted', () => input.focus());
+    return toolbar;
+}
+
+function DeleteInstance(iRow) {
+    let currentTableUuid;
+    let currentRowId = null;
+    iRow.on('table-selected', (table) => {
+        currentTableUuid = table.uuid;
+    });
+    iRow.on('row-selected', (row) => {
+        currentRowId = row.id;
+        label.setText(`Delete row ${row.name}?`);
+    });
+
+    const toolbar = DOM.create(Toolbar, {});
+    const label = DOM.create(Label, { text: 'Delete Instance?' });
+    
+    const confirm = DOM.create(Button, { label: '✓' });
+    confirm.on('clicked', () => {
+        iRow.deleteRow(currentRowId);
+        toolbar.emit('close');
+    });
+    
+    const cancel = DOM.create(Button, { label: '✗' });
+    cancel.on('clicked', () => toolbar.emit('close'));
+    
+    toolbar.add(label);
+    toolbar.add(confirm);
+    toolbar.add(cancel);
+    return toolbar;
+}
+
 export default {
     IdleButton,
-    TableSelector,
 
-    AddTable,
-    RenameTable,
-    DeleteTable,
+    CreateType,
+    RenameType,
+    DeleteType,
+
+    CreateProperty,
+    RenameProperty,
+    DeleteProperty,
     
-    AddRow,
-    DeleteRow,
-
-    AddColumn,
-    DeleteColumn
+    CreateInstance,
+    DeleteInstance,
 }
 

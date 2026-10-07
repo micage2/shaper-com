@@ -1,54 +1,55 @@
 import { DomRegistry as DOM } from '../dom-registry.js';
+import { LoadStyle } from '../shared/dom-helper.js';
+import { GetSVGIcon } from "../shared/icons.js";
+
+const html_file = "./src/dom-comps/button.html";
+LoadStyle(html_file);
 
 function ctor(args = {}) {
-    const host = document.createElement('button');
-    host.style.cssText = `
-        height: var(--control-height, 28px); 
-        padding: var(--control-padding, 4px 12px); 
-        border: var(--control-border, 1px solid #ccc); 
-        border-radius: var(--control-radius, 4px); 
-        font-size: var(--control-font-size, 12px); 
-        /* background: #fff; */
-        cursor: pointer; 
-        white-space:nowrap; 
-        font-family: Segoe UI, Arial, sans-serif;
-    `;
-    host.textContent = args.label || '';
+    const button = document.createElement('button');
     
-    host.addEventListener('click', () => this.emit('clicked'));
+    const size = args.size ? `${args.size}px` : `var(--control-font-size, 12px)`;
+    button.textContent = args.label || '';
+    
+    button.addEventListener('click', () => this.emit('clicked'));
     
     return {
-        getHost() { return host; },
-        getInstance() { return { host }; }
+        getHost() { return button; },
+        getInstance() { return button; }
     };
 }
 
-const IButton = ({host}) => ({
+const IButton = (button) => ({
     setLabel(label) {
-        host.textContent = label;
+        button.textContent = label;
         return this;
+    },
+
+    setIcon(svg) {
+        button.innerHTML = GetSVGIcon(svg);
+        // button.textContent = '';
     },
     
     setActive(active) {
         if (active) {
-            host.classList.add('active');
+            button.classList.add('active');
         } else {
-            host.classList.remove('active');
+            button.classList.remove('active');
         }
         return this;
     },
     
     setEnabled(enabled) {
-        host.disabled = !enabled;
+        button.disabled = !enabled;
         return this;
     },
 
     click() {
-        host.click();
+        button.click();
     },
 
     hide() {
-        host.style.display = 'none';
+        button.style.display = 'none';
     }
 });
 

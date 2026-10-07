@@ -336,7 +336,6 @@ export default function createModelTreeEditor(model) {
     
     if (!addTypeToggle || !renameTypeToggle || !addInstanceToggle || !addPropertyToggle) return null;
     
-    // Wire AddType toggle
     addTypeToggle.on('edit', () => {
         const dialog = createAddTypeDialog();
         if (!dialog) {
@@ -365,7 +364,6 @@ export default function createModelTreeEditor(model) {
         });
     });
     
-    // Wire RenameType toggle
     renameTypeToggle.on('edit', () => {
         const dialog = createRenameTypeDialog(getCurrentTypeName());
         if (!dialog) return;
@@ -389,7 +387,6 @@ export default function createModelTreeEditor(model) {
         });
     });
     
-    // Wire AddInstance toggle
     addInstanceToggle.on('edit', () => {
         const dialog = createAddInstanceDialog(getChildTypes());
         if (!dialog) return;
@@ -413,7 +410,6 @@ export default function createModelTreeEditor(model) {
         });
     });
     
-    // Wire AddProperty toggle
     addPropertyToggle.on('edit', () => {
         const dialog = createAddPropertyDialog();
         if (!dialog) return;
@@ -446,7 +442,6 @@ export default function createModelTreeEditor(model) {
         });
     });
     
-    // Add toggles to EditToggleBox
     editToggleBox.add(addTypeToggle);
     editToggleBox.add(renameTypeToggle);
     editToggleBox.add(addInstanceToggle);
