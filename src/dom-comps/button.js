@@ -10,6 +10,9 @@ function ctor(args = {}) {
     
     const size = args.size ? `${args.size}px` : `var(--control-font-size, 12px)`;
     button.textContent = args.label || '';
+
+    if (args.title) button.title = args.title;
+    if (args.label && ! button.title) button.title = args.label;
     
     button.addEventListener('click', () => this.emit('clicked'));
     

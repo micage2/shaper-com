@@ -65,20 +65,6 @@
           {"id": 2, "data": {"p1a2b3c4": "Friedensreich Hundertwasser", "p2d5e6f7": 71, "p3g8h9i1": 3, "p4j2k3l4": true}},
           {"id": 3, "data": {"p1a2b3c4": "Harald Juhnke", "p2d5e6f7": 54, "p3g8h9i1": 0, "p4j2k3l4": false}}
         ]
-      },
-      {
-        "uuid": "55555555-5555-5555-5555-555555555555",
-        "name": "Architect",
-        "columns": [
-          {"colId": "a1b2c3d4", "name": "person", "type": 42, "targetTableUuid": "44444444-4444-4444-4444-444444444444"},
-          {"colId": "a2e5f6g7", "name": "building", "type": 42, "targetTableUuid": "22222222-2222-2222-2222-222222222222"},
-          {"colId": "a3h8i9j1", "name": "role", "type": 1}
-        ],
-        "rows": [
-          {"id": 0, "data": {"a1b2c3d4": 0, "a2e5f6g7": 1, "a3h8i9j1": "lead architect"}},
-          {"id": 1, "data": {"a1b2c3d4": 1, "a2e5f6g7": 2, "a3h8i9j1": "lead architect"}},
-          {"id": 2, "data": {"a1b2c3d4": 2, "a2e5f6g7": 4, "a3h8i9j1": "consultant"}}
-        ]
       }
     ]
   }

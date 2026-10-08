@@ -29,7 +29,7 @@ function ctor(args = {}) {
     
     const fields = new Map();
     
-    function createField(name, cell) {
+    function createField(key, cell) {
         const field = document.createElement('div');
         field.style.cssText = `
             display:flex;
@@ -50,7 +50,7 @@ function ctor(args = {}) {
             text-align: right;
             user-select: none;
         `;
-        label.textContent = name + ':';
+        label.textContent = cell.name + ':';
         field.appendChild(label);
         
         const valueContainer = document.createElement('div');
@@ -60,7 +60,7 @@ function ctor(args = {}) {
         `;
         field.appendChild(valueContainer);
         
-        fields.set(name, { field, cell });
+        fields.set(key, { field, cell });
         host.appendChild(field);
         
         return valueContainer;
@@ -80,16 +80,16 @@ const input_types = ['text', 'number', 'checkbox', ''];
 const IPropertyView = (instance) => ({
     // name, type, value
     add(prop) {
-        console.info('💡', '[IPropertyView.add]', prop);
+        // console.info('💡', '[IPropertyView.add]', prop);
 
         const typeIndex = typeIds.indexOf(prop.type);
         if (typeIndex < 0) {
             console.warn('Invalid datatype', prop.type);
             return null;
         }
-        if (instance.fields.has(prop.name)) return null;
+        if (instance.fields.has(prop.colId)) return null;
         
-        const container = instance.createField(prop.name, prop);
+        const container = instance.createField(prop.colId, prop);
         let child;
         
         if (prop.type !== 42) {
@@ -122,7 +122,7 @@ const IPropertyView = (instance) => ({
             border: 0;
             text-align: left;
             background-color: var(--bg);
-            // padding: 0 8px;
+            padding: 0 8px;
         `;
         if (prop.type === 3) child.style.width = '';
         
@@ -151,17 +151,17 @@ const IPropertyView = (instance) => ({
         return this;
     },
     
-    remove(name) {
-        const entry = instance.fields.get(name);
+    remove(key) {
+        const entry = instance.fields.get(key);
         if (entry && entry.field) {
             entry.field.remove();
-            instance.fields.delete(name);
+            instance.fields.delete(key);
         }
         return this;
     },
     
-    set(name, value) {
-        const entry = instance.fields.get(name);
+    set(key, value) {
+        const entry = instance.fields.get(key);
         if (entry) {
             const input = entry.field.querySelector('input, select');
             if (input) {
@@ -173,7 +173,15 @@ const IPropertyView = (instance) => ({
             }
         }
         return this;
-    }
+    },
+
+    rename(col) {
+        const entry = instance.fields.get(col.id);
+        if (entry) {
+            entry.cell.name = col.newName;
+            entry.field.querySelector('span').textContent = col.newName + ':';
+        }
+    },
 });
 
 const info = {

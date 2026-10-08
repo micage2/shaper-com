@@ -38,8 +38,8 @@ export default function ModelEditor(db) {
     const iTree = db;    
     const iTable = db;
     
-    const treeEditor = TreeEditor(iTree);
-    const tableEditor = TableEditor(iTable);
+    const treeEditor = null; // TreeEditor(iTree, []);
+    const tableEditor = null; // TableEditor(iTable);
     appToolbar.add(modeSelect);
     rootTBS.setTop(appToolbar);
     const lr = LR({
@@ -73,8 +73,10 @@ export default function ModelEditor(db) {
     });
     appToolbar.add(saveButton);
     
+    const treeUnsubs = [];
     modeSelect.on('changed', (msg) => {
-        if (msg.value === 'tree') rootTBS.setBottom(TreeEditor(iTree));
+        // if (msg.value === 'tree') rootTBS.setBottom(TreeEditor(iTree));
+        if (msg.value === 'tree') rootTBS.setBottom(TreeEditor(iTree, treeUnsubs));
         // if (msg.value === 'tree') rootTBS.setBottom(Simple("No"));
         else if (msg.value === 'table') rootTBS.setBottom(TableEditor(iTable));
     });

@@ -111,8 +111,8 @@ function CreateProperty(iface) {
     });
 
     let currentTableUuid = null;
-    iface.on('table-selected', (table) => {
-        currentTableUuid = table.uuid;
+    iface.on('node-selected', node => {
+        currentTableUuid = node.tableUuid;
     });
     
     // add selector for links
@@ -120,7 +120,7 @@ function CreateProperty(iface) {
     typeSelect.on('changed', function(msg) {
         const type = Number(msg.value);
         if (type === 42 && !targetSelect) {
-            const linkTargets = iface.getLinks();
+            const linkTargets = iface.getLinkOptions();
             targetSelect = Selector({ options: linkTargets });
             toolbar.add(targetSelect, { after: typeSelect });
         }
@@ -164,19 +164,25 @@ function CreateProperty(iface) {
     toolbar.on('mounted', () => input.focus());
     return toolbar;
 }
+
 function RenameProperty(db) {
     let select = Selector();
     let input = null;
 
-    let currentTableUuid = null;
-    db.on('type-selected', (table) => {
-        currentTableUuid = table.uuid;
+    let currentTypeUuid = null;
+    db.on('type-selected', (type) => {
+        currentTypeUuid = type.uuid;
+        toolbar.remove(input);
         toolbar.remove(select);
 
-        const options = db.getColumns(currentTableUuid).map(col => ({
+        const options = db.getColumns(currentTypeUuid).map(col => ({
             label: col.name, value: col.id
         }));
+        options.shift(); // remove 'name' prop
         select = Selector({ options });
+        select.on('changed', (msg) => {
+            input.setValue(msg.label);
+        });
 
         input = DOM.create(TextInput, {
             value: select.getSelected().label, placeholder: 'New name'
@@ -194,7 +200,7 @@ function RenameProperty(db) {
         const colId = select.getValue();
         const value = input.getValue().trim();
 
-        db.renameColumn(currentTableUuid, colId, value);
+        db.renameColumn(currentTypeUuid, colId, value);
         
         toolbar.emit('close');
     });
@@ -206,6 +212,9 @@ function RenameProperty(db) {
     toolbar.add(select);
     toolbar.add(confirm);
     toolbar.add(cancel);
+    toolbar.on('mounted', () => {
+        input.focus();
+    });
     return toolbar;
 }
 
@@ -261,17 +270,23 @@ function CreateInstance(iface) {
     const toolbar = DOM.create(Toolbar, {});
     const label = DOM.create(Label, { text: 'New Instance' });
     const input = DOM.create(TextInput, { value: '', placeholder: 'Name' });
-    
+
+    const text = `Use current type selection`;
+    // All types are possible.
+    // All newly created instances are root level unless their type
+    // has a link column pointing to the selected node's type.
+    // console.log('⚙️', '[Dialog.CreateInstance]', text);
+
     let currentTableUuid = null;
-    iface.on('table-selected', (data) => {
-        currentTableUuid = data.uuid;
+    iface.on('type-selected', (type) => {
+        currentTableUuid = type.uuid;
     });
     
     const confirm = DOM.create(Button, { label: '✓' });
     confirm.on('clicked', () => {
         const name = input.getValue().trim();
         if (name && currentTableUuid) {
-            iface.createRow({ name });
+            iface.createRow(currentTableUuid, { name });
         }
         toolbar.emit('close');
     });
@@ -283,7 +298,10 @@ function CreateInstance(iface) {
     toolbar.add(input);
     toolbar.add(confirm);
     toolbar.add(cancel);
-    toolbar.on('mounted', () => input.focus());
+    toolbar.on('mounted', () => {
+        input.setValue('');
+        input.focus();
+    });
     return toolbar;
 }
 

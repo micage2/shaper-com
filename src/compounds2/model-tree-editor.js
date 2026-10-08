@@ -32,6 +32,7 @@ function getTableName(db, tableUuid) {
 
 function buildPropertyView(db, tableUuid, rowId, unsubs) {
     for (const unsub of unsubs) unsub(); // unsubscribe
+    unsubs.length = 0;
 
     const caption = getTableName(db, tableUuid);
     const propView = DOM.create(PropertyView, { caption });
@@ -49,6 +50,7 @@ function buildPropertyView(db, tableUuid, rowId, unsubs) {
             name: col.name,
             colId: col.id,
             rowId,
+            tableUuid
         };
         propView.add(prop);
     }
@@ -75,6 +77,7 @@ function buildTreeView(db, uuid, lr, unsubs) {
             const propertyView = buildPropertyView(db, tableUuid, rowId, propertyViewUnsubs);
             lr.setRight(propertyView);
             lr.emit('prop-view-changed', propertyView);
+            lr.emit('node-selected', { rowId, tableUuid });
         }
         else {
             const simple = DOM.create(SimpleView, {title: `
@@ -107,11 +110,14 @@ function findItem(treeview, tableUuid, rowId) {
 }
 
 // Main compound
-export default function ModelTreeEditor(model) {
+export default function ModelTreeEditor(model, unsubs) {
     if (!model) {
         console.error('[ModelTreeEditor] Model is required');
         return null;
     }
+
+    for (const unsub of unsubs) { unsub(); }
+    unsubs.length = 0;
 
     // Layout
     const rootTBS = DOM.create(TBS, { topHeight: 40 });
@@ -122,66 +128,75 @@ export default function ModelTreeEditor(model) {
     rootTBS.setBottom(mainLR);
 
     let currentTreeView = null;
+    const views = { tree: null, props: null };
     const treeViewUnsubs = [];
 
     const typeSelector = Selector();
-    typeSelector.on('changed', ({ value, label }) => {
+    unsubs.push(typeSelector.on('changed', ({ value, label }) => {
         // console.log('⚙️', '[MTE]', 'type changed', { value, label });
 
         currentTreeView = buildTreeView(model, value, mainLR, treeViewUnsubs);
         mainLR.setLeft(currentTreeView);
         currentTreeView.select(currentTreeView.forItems(i => true)); // first item
         model.emit('type-selected', { uuid: value, name: label });
-    });
+        mainLR.emit('type-selected', { uuid: value, name: label });
+    }));
 
     let currentPropertyView = null;
-    mainLR.on('prop-view-changed', (propview) => currentPropertyView = propview);
+    unsubs.push(mainLR.on('prop-view-changed', (propview) => currentPropertyView = propview));
 
-    model.on('db-table-created', function (table) {
+    unsubs.push(model.on('db-table-created', function (table) {
         console.info('💡', '[MTE]', 'db-table-created:', table.name);
         
         // add type to typeSelector
         typeSelector.addOptionObj({ value: table.uuid, label: table.name });
         // console.log('❓', '[MTE]', 'select table?', table.name);
-    });
+    }));
 
-    model.on('db-table-renamed', function (table) {
+    unsubs.push(model.on('db-table-renamed', function (table) {
         console.log('⚙️', '[MTE]', 'db-table-renamed', table);
-    });
+    }));
 
-    model.on('db-table-deleted', function (table) {
+    unsubs.push(model.on('db-table-deleted', function (table) {
         console.log('⚙️', '[MTE]', 'db-table-deleted', table);
-    });
+    }));
 
-    model.on('db-row-created', function (row) {
+    unsubs.push(model.on('db-row-created', function (row) {
         console.log('⚙️', '[MTE]', 'db-row-created', row);
-        // add tree node into right parent node
-        // if row has link colums take the first
-        // if not it's not part of the tree
+        if (!currentTreeView) return;
 
-    });
+        const item = addTreeNode(model, currentTreeView, {
+            tableUuid: row.tableUuid, rowId: row.id
+        }, null); // no parent
 
-    model.on('db-row-deleted', function (row) {
+        // currentTreeView.emit('item-selected', item);
+        currentTreeView.select(item);
+    }));
+
+    unsubs.push(model.on('db-row-deleted', function (row) {
         console.log('⚙️', '[MTE]', 'db-row-deleted', row);
-    });
+    }));
     
-    model.on('db-column-created', function (col) {
+    unsubs.push(model.on('db-column-created', function (col) {
         console.info('💡', '[MTE]', 'db-column-created:', col.name);
-        // if (!currentPropertyView) return;
-        // if (typeSelector.getValue() === col.tableUuid)
-        //     currentPropertyView.add(col);
-    });
+        if (!currentPropertyView) return;
+        currentPropertyView.add(col);
+    }));
 
-    model.on('db-column-renamed', function (col) {
+    unsubs.push(model.on('db-column-renamed', function (col) {
         console.log('⚙️', '[MTE]', 'db-column-renamed', col);
-    });
 
-    model.on('db-column-deleted', function (col) {
+        if(currentPropertyView) {
+            currentPropertyView.rename(col);
+        }
+    }));
+
+    unsubs.push(model.on('db-column-deleted', function (col) {
         // console.log('⚙️', '[MTE]', 'db-column-deleted', col);
         currentPropertyView.remove(col.name);
-    });
+    }));
 
-    model.on('db-cell-changed', (cell) => {
+    unsubs.push(model.on('db-cell-changed', (cell) => {
         // console.log('⚙️', '[MTE]', 'db-cell-changed', cell);
         if (!currentPropertyView) return;
         
@@ -201,17 +216,29 @@ export default function ModelTreeEditor(model) {
             }
         }
         else {
-            // console.log('⚙️', '[MTE]', 'db-cell-changed, not a link', cell);
+            console.log('⚙️', '[MTE]', 'db-cell-changed, not a link', cell);
+            console.log('⚙️', 'update field, use set(cell.colId, cell.newValue)', cell);
             // find treeitem that represents this cell
             const col = model.getColumn(cell.tableUuid, cell.colId);
             if (col.name === 'name') {
                 const item = findItem(currentTreeView, cell.tableUuid, cell.rowId);
                 if (item) item.setLabel(cell.newValue);
             }
+            else {
+                currentPropertyView.set(cell.colId, cell.newValue);
+            }
         }
 
-        currentPropertyView.set(cell.columnName, cell.newValue);
-    });
+        // currentPropertyView.set(cell.colId, cell.newValue);
+    }));
+
+    const iface = {
+        on: mainLR.on,
+        createColumn: model.createColumn,
+        getLinkOptions: () => model.forTables().map(t => ({
+            value: t.uuid, label: t.name
+        })),
+    };
 
     // Add TwoState toggles to TwoStateBox
     twoStateBox.add('type-select', 'left', typeSelector, null);
@@ -219,7 +246,7 @@ export default function ModelTreeEditor(model) {
     twoStateBox.add('rename-type', 'left', Dialog.IdleButton('✏️'), Dialog.RenameType(model));
     twoStateBox.add('delete-type', 'left', Dialog.IdleButton('🗑'), Dialog.DeleteType(model));
 
-    twoStateBox.add('create-property', 'center', Dialog.IdleButton('+ Property'), Dialog.CreateProperty(model));
+    twoStateBox.add('create-property', 'center', Dialog.IdleButton('+ Property'), Dialog.CreateProperty(iface));
     twoStateBox.add('rename-property', 'center', Dialog.IdleButton('✏️'), Dialog.RenameProperty(model));
     twoStateBox.add('delete-property', 'center', Dialog.IdleButton('🗑'), Dialog.DeleteProperty(model));
     
@@ -227,14 +254,7 @@ export default function ModelTreeEditor(model) {
     twoStateBox.add('delete-instance', 'right', Dialog.IdleButton('🗑'), Dialog.DeleteInstance(model));
 
     // bootstrap after loading
-    // model.replay();
-    // const tables = model.forTables(t=>typeSelector.addOptionObj({
-    //     label: t.name, value: t.uuid
-    // }));
     model.forTables(t=>typeSelector.addOption(t.name, t.uuid));
-    // const firstType = model.forTables(() => true, 'one');
-    // const selected = typeSelector.getSelected();
-    // typeSelector.emit('changed', { value: firstType.uuid, label: firstType.name });
 
     return rootTBS;
 }

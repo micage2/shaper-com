@@ -119,6 +119,13 @@ const ITreeView = (instance) => ({
         return null;
     },
 
+    /**
+     * @param {Object} itemData
+     * @property {Object} data
+     * @property {string} label
+     * @property {string} icon
+     * @property {string} type - 'folder' or 'file'
+     */
     add(itemData) {
         const selected = this.getSelected();
         if (selected && !selected.isFolder()) {

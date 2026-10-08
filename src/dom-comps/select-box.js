@@ -96,7 +96,7 @@ const ISelectBox = ({ host, _addOption, _removeOption, _setLabel }) => ({
         _addOption({label, value});
 
         if (flag) {
-            console.log('❓', '[Selector]', 'autoselect, this might be a mistake');
+            // console.log('❓', '[Selector]', 'autoselect, this might be a mistake');
             this.emit('changed', {label, value});
         }
     },
